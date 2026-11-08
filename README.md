@@ -14,8 +14,8 @@ Everything is drawn as SVG in React components: the macaw, the poacher and his b
 
 ## Open it in Visual Studio Code
 
-1. Unzip `blue-bird.zip`. You get a folder called `blue-bird`.
-2. In VS Code: **File → Open Folder…** and choose that `blue-bird` folder.
+1. Get the code: clone this repository, or on GitHub click **Code → Download ZIP** and unzip it. You get a folder called `blue-bird-jungle`.
+2. In VS Code: **File → Open Folder…** and choose that `blue-bird-jungle` folder.
 3. Install [Node.js](https://nodejs.org) 18 or newer if you don't have it.
 4. Open the terminal (**Terminal → New Terminal**) and run `npm install` once.
 5. Run `npm run dev`. The game opens at http://localhost:5173 and reloads as you save files.
