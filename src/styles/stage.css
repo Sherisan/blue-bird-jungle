@@ -1,0 +1,1038 @@
+/* ---- stage frame ---------------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: var(--stage-h);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #071a33;
+  box-shadow:
+    0 24px 50px -24px rgba(0, 0, 0, 0.85),
+    0 0 80px -28px var(--game);
+  isolation: isolate;
+}
+
+.stage__camera {
+  position: absolute;
+  inset: -12px;
+}
+
+.stage__svg {
+  position: absolute;
+  inset: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  display: block;
+}
+
+.stage__vignette,
+.stage__danger,
+.stage__flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stage__vignette {
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(1, 6, 14, 0.72) 100%);
+}
+
+.stage__danger {
+  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(255, 70, 50, 0.5) 100%);
+  mix-blend-mode: screen;
+}
+
+.stage__flash {
+  background: #e8f8ff;
+}
+
+/* ---- SVG animation hooks (each class sits on a group with no transform attribute) ---- */
+
+.twinkle {
+  animation: twinkle 3.2s ease-in-out infinite;
+}
+
+.shimmer {
+  animation: shimmer 2.6s ease-in-out infinite;
+}
+
+.mist {
+  animation: drift 30s ease-in-out infinite alternate;
+}
+
+.moonrays {
+  transform-box: view-box;
+  transform-origin: 860px 96px;
+  animation: spin 160s linear infinite;
+}
+
+.fall {
+  animation: fall 0.9s linear infinite;
+}
+
+.aurora {
+  animation: aurora 9s ease-in-out infinite alternate;
+}
+
+.spray {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: spray 1.8s ease-out infinite;
+}
+
+.foam {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: foam 1.6s ease-in-out infinite;
+}
+
+.ripple {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: ripple 2.4s ease-out infinite;
+}
+
+.firefly {
+  animation: firefly 4s ease-in-out infinite;
+}
+
+.glow-pulse {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.sway-top {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: sway 5s ease-in-out infinite;
+}
+
+.flock-path {
+  animation: flock 36s linear infinite;
+}
+
+.flock-bird {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flock-flap 0.5s ease-in-out infinite alternate;
+}
+
+.drift-a {
+  animation: drift-a 9s ease-in-out infinite;
+}
+
+.drift-b {
+  animation: drift-b 11s ease-in-out infinite;
+}
+
+.morpho-wings {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: morpho 0.35s ease-in-out infinite alternate;
+}
+
+.hover-a {
+  animation: hover-a 3.4s ease-in-out infinite;
+}
+
+.hover-b {
+  animation: hover-b 4s ease-in-out infinite;
+}
+
+.hummer-wing {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flap 0.05s linear infinite alternate;
+}
+
+.toucan-head {
+  transform-box: fill-box;
+  transform-origin: 70% 80%;
+  animation: toucan 5s ease-in-out infinite;
+}
+
+.reticle {
+  animation: spin 5s linear infinite;
+}
+
+.bird-aura {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: aura 1.4s ease-in-out infinite;
+}
+
+.bird .blink {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: blink 4.2s ease-in-out infinite;
+}
+
+.bird .head-idle {
+  transform-box: fill-box;
+  transform-origin: 30% 90%;
+  animation: head-idle 3.8s ease-in-out infinite;
+}
+
+.mote {
+  animation: mote 7s ease-in-out infinite;
+}
+
+.bird .wing {
+  transform-box: fill-box;
+  transform-origin: 40% 95%;
+}
+
+.bird .wing-near {
+  animation: wingbeat 0.44s ease-in-out infinite;
+}
+
+.bird .wing-far {
+  animation: wingbeat 0.44s ease-in-out 0.07s infinite;
+}
+
+/* bioluminescent feather tips and wing markings */
+.bird .glowtip {
+  filter: drop-shadow(0 0 3px #39d0ff);
+  animation: glow 2.4s ease-in-out infinite;
+}
+
+.bird .tail {
+  transform-box: fill-box;
+  transform-origin: 100% 0%;
+  animation: tail 0.44s ease-in-out infinite;
+}
+
+.bird .dizzy {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+.speech-bubble {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: pop 0.22s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+/* ---- overlays ------------------------------------------------------------------ */
+
+.stage__top {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage__icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: rgba(3, 10, 18, 0.6);
+  border: 1px solid var(--line);
+  color: var(--soft);
+}
+
+.stage__history {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+
+.stage__hint {
+  font-size: 12px;
+  color: var(--soft);
+}
+
+.pill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  backdrop-filter: blur(4px);
+}
+
+.pill--low {
+  color: #ff8d82;
+  border-color: rgba(255, 106, 92, 0.45);
+  background: rgba(40, 10, 10, 0.55);
+}
+
+.pill--mid {
+  color: var(--gold-2);
+  border-color: rgba(217, 180, 90, 0.45);
+  background: rgba(30, 24, 10, 0.6);
+}
+
+.pill--high {
+  color: var(--win-2);
+  border-color: rgba(63, 214, 138, 0.5);
+  background: rgba(6, 36, 22, 0.6);
+}
+
+.stage__round {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.6);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.stage__center {
+  position: absolute;
+  top: 6%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.stage__kicker {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.kicker--gold {
+  color: var(--gold-2);
+}
+.kicker--game {
+  color: var(--game);
+}
+.kicker--loss {
+  color: #ff8d82;
+}
+
+.stage__mult {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(56px, 7.5vw, 120px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.stage__mult--waiting {
+  color: var(--text);
+  opacity: 0.6;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
+}
+
+.stage__mult--flying {
+  color: #f2fbff;
+  text-shadow:
+    0 0 30px rgba(57, 208, 255, 0.7),
+    0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+.stage__mult--crashed {
+  color: var(--loss);
+  text-shadow:
+    0 0 32px rgba(255, 106, 92, 0.6),
+    0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+/* multiplier colour tiers while flying: white → cyan → gold → shimmering */
+.stage__mult.tier-1 {
+  color: #b8f0ff;
+  text-shadow:
+    0 0 34px rgba(57, 208, 255, 0.9),
+    0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+.stage__mult.tier-2,
+.stage__mult.tier-3 {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.stage__mult.tier-2 {
+  background-image: linear-gradient(180deg, #fff6d6 10%, #f4d78e 50%, #d9a23a 95%);
+  filter: drop-shadow(0 0 22px rgba(244, 215, 142, 0.6)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+
+.stage__mult.tier-3 {
+  background-image: linear-gradient(90deg, #ff6fd8, #7fe3ff, #ffd23f, #ff6fd8);
+  background-size: 300% 100%;
+  animation: shimmer-text 2.4s linear infinite;
+  filter: drop-shadow(0 0 26px rgba(255, 111, 216, 0.55)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+
+.stage__mult.bump {
+  animation: bump 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.stage__mult.tier-3.bump {
+  animation:
+    bump 0.45s cubic-bezier(0.2, 1.6, 0.4, 1),
+    shimmer-text 2.4s linear infinite;
+}
+
+.stamp {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: stamp 0.28s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+.beam {
+  animation: beam 6s ease-in-out infinite;
+}
+
+.countdown {
+  width: 240px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.65);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.countdown__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-2), var(--gold));
+}
+
+.stage__sub {
+  font-size: 15px;
+  font-weight: 600;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+}
+
+.result {
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+  animation: pop 0.25s ease-out both;
+}
+
+.result--win {
+  background: rgba(63, 214, 138, 0.16);
+  border: 1px solid rgba(143, 245, 192, 0.6);
+  color: var(--win-2);
+}
+
+.result--loss {
+  background: rgba(255, 106, 92, 0.16);
+  border: 1px solid rgba(255, 106, 92, 0.6);
+  color: var(--loss-2);
+}
+
+.coin-burst {
+  position: absolute;
+  pointer-events: none;
+}
+
+.celebrate {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 320px;
+  height: 220px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.celebrate__rays {
+  position: absolute;
+  opacity: 0.55;
+  animation: spin 7s linear infinite;
+}
+
+.celebrate__plaque {
+  position: relative;
+  padding: 18px 30px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(16, 36, 60, 0.96), rgba(8, 22, 40, 0.96));
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 50px -6px rgba(217, 180, 90, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  animation: pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.celebrate__label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-2);
+}
+
+.celebrate__total {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1;
+  color: var(--win-2);
+  text-shadow: 0 0 22px rgba(63, 214, 138, 0.6);
+}
+
+.celebrate__at {
+  font-size: 13px;
+  color: var(--soft);
+}
+
+.curve {
+  position: absolute;
+  right: 14px;
+  bottom: 50px;
+  width: 226px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(3, 10, 18, 0.66);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+
+.curve svg {
+  display: block;
+  margin-top: 4px;
+}
+
+.curve__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.stage__toast {
+  position: absolute;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(6, 19, 34, 0.9);
+  border: 1px solid var(--line-2);
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+  animation: pop 0.2s ease-out both;
+}
+
+.gauge {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+.gauge__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gauge__track {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.7);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.gauge__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--game-2), var(--game));
+  box-shadow: 0 0 12px var(--game);
+}
+
+.gauge__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.gauge__scale {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .curve,
+  .stage__round {
+    display: none;
+  }
+  .stage__center {
+    top: 13%;
+    gap: 6px;
+  }
+  .stage__mult {
+    font-size: 48px;
+  }
+  .stage__sub {
+    font-size: 13px;
+  }
+  .result {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+}
+
+/* ---- steering ---------------------------------------------------------------- */
+
+.stage:focus-visible {
+  outline: 2px solid var(--game);
+  outline-offset: 3px;
+}
+
+.stage--steerable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.stage.is-dragging {
+  cursor: grabbing;
+}
+
+.steer-hint {
+  position: absolute;
+  left: 14px;
+  bottom: 44px;
+  max-width: min(520px, calc(100% - 270px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.66);
+  border: 1px solid rgba(57, 208, 255, 0.4);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  animation: float-in 0.4s ease-out both;
+}
+
+.steer-hint svg {
+  flex: none;
+  color: var(--game);
+}
+
+.steer-hint em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--soft);
+}
+
+@media (max-width: 760px) {
+  .steer-hint {
+    max-width: calc(100% - 28px);
+    font-size: 12px;
+  }
+  .steer-hint em {
+    display: none;
+  }
+}
+
+/* ---- professional HUD ---------------------------------------------------------- */
+
+.hud-corners {
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+}
+
+.hud-corners i {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: rgba(57, 208, 255, 0.55);
+  border-style: solid;
+  border-width: 0;
+}
+
+.hud-corners i:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: 12px;
+}
+.hud-corners i:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  border-top-right-radius: 12px;
+}
+.hud-corners i:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-left-radius: 12px;
+}
+.hud-corners i:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+  border-bottom-right-radius: 12px;
+}
+
+button.stage__round {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--soft);
+  cursor: pointer;
+}
+
+button.stage__round:hover {
+  border-color: var(--game);
+  color: var(--text);
+}
+
+/* countdown ring while betting */
+.ring {
+  position: relative;
+  width: clamp(96px, 9vw, 128px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  max-width: 100%;
+}
+
+.ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 14px rgba(244, 215, 142, 0.35));
+}
+
+.ring__track {
+  fill: rgba(3, 10, 18, 0.62);
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 6;
+}
+
+.ring__fill {
+  fill: none;
+  stroke: var(--gold-2);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.ring__value {
+  position: relative;
+  margin-top: -8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1;
+  color: var(--text);
+}
+
+.ring__unit {
+  position: absolute;
+  bottom: 24%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* flight graph */
+.curve {
+  width: 252px;
+}
+
+.curve__axis {
+  font: 600 9px var(--font-body);
+  fill: var(--muted);
+}
+
+/* stake bar */
+.stakebar {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.72);
+  border: 1px solid var(--line-2);
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.stakebar__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stakebar strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.stakebar__arrow {
+  color: var(--muted);
+}
+
+.stakebar__value {
+  color: var(--game);
+}
+
+.steer-hint {
+  bottom: 62px;
+}
+
+.stage__toast {
+  bottom: 62px;
+}
+
+.curve {
+  bottom: 14px;
+}
+
+/* bottom-left HUD stack: round results above the stake bar */
+.hud-bl {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  max-width: calc(100% - 300px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.hud-bl .stakebar {
+  position: static;
+}
+
+.hud-bl .result {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.steer-hint {
+  top: 52px;
+  bottom: auto;
+}
+
+.curve {
+  width: 270px;
+}
+
+@media (max-width: 760px) {
+  .hud-bl {
+    max-width: calc(100% - 28px);
+  }
+}
+
+/* ==== Bold pass: HUD =================================================================== */
+
+/* a soft dark plate behind the centre readout keeps it legible over the sky */
+.stage__center > * {
+  position: relative;
+}
+
+.stage__center::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  width: min(700px, 82%);
+  height: 240px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(2, 8, 22, 0.5), rgba(2, 8, 22, 0));
+  pointer-events: none;
+}
+
+.stage__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 15px 6px 12px;
+  background: linear-gradient(180deg, rgba(10, 26, 46, 0.85), rgba(3, 10, 20, 0.85));
+  border-color: rgba(127, 227, 255, 0.2);
+  box-shadow:
+    0 10px 22px -12px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+}
+
+.stage__kicker::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.kicker--game::before {
+  animation: kicker-dot 1s ease-in-out infinite;
+}
+
+.stage__mult {
+  font-size: clamp(64px, 8.2vw, 136px);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage__mult--flying,
+.stage__mult--crashed,
+.stage__mult.tier-1 {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.stage__mult--flying {
+  background-image: linear-gradient(180deg, #ffffff 18%, #d6f6ff 52%, #86dcff 100%);
+  filter: drop-shadow(0 0 22px rgba(57, 208, 255, 0.55)) drop-shadow(0 5px 12px rgba(0, 0, 0, 0.65));
+}
+
+.stage__mult.tier-1 {
+  background-image: linear-gradient(180deg, #effcff 12%, #8fe9ff 55%, #2fb4f0 100%);
+  filter: drop-shadow(0 0 28px rgba(57, 208, 255, 0.8)) drop-shadow(0 5px 12px rgba(0, 0, 0, 0.65));
+}
+
+.stage__mult--crashed {
+  background-image: linear-gradient(180deg, #ffe2de 10%, #ff8478 55%, #e0473a 100%);
+  filter: drop-shadow(0 0 26px rgba(255, 106, 92, 0.6)) drop-shadow(0 5px 12px rgba(0, 0, 0, 0.65));
+}
+
+.stage__sub {
+  font-size: 16px;
+  color: var(--soft);
+}
+
+/* history pills: gradient fills, the newest one glows */
+.pill {
+  padding: 4px 11px;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.pill--low {
+  background: linear-gradient(180deg, rgba(78, 18, 18, 0.75), rgba(36, 8, 8, 0.75));
+}
+
+.pill--mid {
+  background: linear-gradient(180deg, rgba(76, 56, 14, 0.75), rgba(34, 24, 6, 0.75));
+}
+
+.pill--high {
+  background: linear-gradient(180deg, rgba(12, 74, 44, 0.75), rgba(4, 32, 18, 0.75));
+}
+
+.stage__history .pill:first-child {
+  box-shadow:
+    0 0 16px -3px currentColor,
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* countdown ring: a glowing gold arc on a glass disc */
+.ring {
+  width: clamp(104px, 9.5vw, 136px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(10, 26, 46, 0.9) 0 58%, rgba(10, 26, 46, 0) 70%);
+}
+
+.ring__track {
+  fill: rgba(3, 10, 18, 0.45);
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 7;
+}
+
+.ring__fill {
+  stroke: url(#ring-grad);
+  stroke-width: 7;
+  filter: drop-shadow(0 0 6px rgba(244, 215, 142, 0.75));
+}
+
+.ring__value {
+  font-size: clamp(34px, 3.2vw, 46px);
+  background: linear-gradient(180deg, #fff6d6, #f4d78e 60%, #d9a23a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* thin HUD corner marks */
+.hud-corners i {
+  border-color: rgba(127, 227, 255, 0.45);
+}
+
+/* the steering hint sits in the open strip above the lagoon, clear of the centre readout */
+@media (min-width: 761px) {
+  .steer-hint {
+    top: auto;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    width: fit-content;
+    margin: 0 auto;
+    max-width: min(460px, calc(100% - 600px));
+    background: linear-gradient(180deg, rgba(10, 26, 46, 0.85), rgba(3, 10, 20, 0.85));
+  }
+}
