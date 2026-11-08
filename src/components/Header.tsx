@@ -44,30 +44,38 @@ export function Header({ balance, soundOn, sessionMs, onMenu, onRules, onSetting
   return (
     <header className="topbar">
       <div className="topbar__left">
-        <button className="icon-btn icon-btn--accent" aria-label="Open game menu" onClick={onMenu}>
+        <button className="icon-btn topbar__menu" aria-label="Open game menu" aria-haspopup="dialog" onClick={onMenu}>
           <MenuIcon />
         </button>
-        <div className="brand">
-          <Logo size={44} />
-          <div className="brand__text">
-            <span className="brand__name">Blue Bird Jungle</span>
-            <span className="brand__sub">Crash game · RTP 99% · up to 10 000×</span>
-          </div>
+        <Logo />
+        <div className="topbar__title">
+          <span className="kicker">Crash world · Blue jungle</span>
+          <h1>Blue Bird Jungle</h1>
+        </div>
+        <div className="topbar__tags">
+          <span className="tag">RTP 99%</span>
+          <span className="tag">Max 10 000×</span>
+          <span className="tag">
+            Volatility
+            <span className="vol" aria-label="3 of 4">
+              <i style={{ height: 6 }} />
+              <i style={{ height: 9 }} />
+              <i style={{ height: 12 }} />
+              <i className="off" style={{ height: 15 }} />
+            </span>
+          </span>
         </div>
       </div>
-
       <div className="topbar__right">
         <span className="session" title="Time played this session">
           <ClockIcon size={16} />
           <span className="num">{clock(sessionMs)}</span>
         </span>
         <div className="balance">
-          <Coin size={28} />
+          <Coin size={26} />
           <div className="balance__text">
             <span className="balance__value num">{fmt(balance)}</span>
-            <span className="balance__unit">
-              <span className="demo-badge">Demo</span> credits
-            </span>
+            <span className="balance__unit">demo credits</span>
           </div>
           {balance < 100 && (
             <button className="btn-ghost btn-ghost--sm" onClick={onRefill}>
@@ -75,28 +83,26 @@ export function Header({ balance, soundOn, sessionMs, onMenu, onRules, onSetting
             </button>
           )}
         </div>
-        <div className="toolbar" role="toolbar" aria-label="Game controls">
-          <button className="icon-btn" aria-label="Rules and help" title="Rules and help" onClick={onRules}>
-            <BookIcon />
+        <button className="icon-btn" aria-label="Rules and help" title="Rules and help" onClick={onRules}>
+          <BookIcon />
+        </button>
+        <button className="icon-btn nav-btn" aria-label="Settings" title="Settings" onClick={onSettings}>
+          <GearIcon />
+        </button>
+        <button
+          className={`icon-btn${soundOn ? ' is-on' : ''}`}
+          aria-label={soundOn ? 'Mute sound' : 'Turn sound on'}
+          title={soundOn ? 'Mute sound' : 'Turn sound on'}
+          aria-pressed={soundOn}
+          onClick={onToggleSound}
+        >
+          {soundOn ? <SoundIcon /> : <MuteIcon />}
+        </button>
+        {fs.supported && (
+          <button className="icon-btn nav-btn" aria-label={fs.on ? 'Exit full screen' : 'Full screen'} title={fs.on ? 'Exit full screen' : 'Full screen'} onClick={fs.toggle}>
+            {fs.on ? <ShrinkIcon /> : <ExpandIcon />}
           </button>
-          <button className="icon-btn" aria-label="Settings" title="Settings" onClick={onSettings}>
-            <GearIcon />
-          </button>
-          <button
-            className={`icon-btn${soundOn ? ' is-on' : ''}`}
-            aria-label={soundOn ? 'Mute sound' : 'Turn sound on'}
-            title={soundOn ? 'Mute sound' : 'Turn sound on'}
-            aria-pressed={soundOn}
-            onClick={onToggleSound}
-          >
-            {soundOn ? <SoundIcon /> : <MuteIcon />}
-          </button>
-          {fs.supported && (
-            <button className="icon-btn fs-btn" aria-label={fs.on ? 'Exit full screen' : 'Full screen'} title={fs.on ? 'Exit full screen' : 'Full screen'} onClick={fs.toggle}>
-              {fs.on ? <ShrinkIcon /> : <ExpandIcon />}
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </header>
   );

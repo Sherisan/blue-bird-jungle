@@ -75,7 +75,7 @@ export function AutoPlayPanel({ s, engine }: { s: GameState; engine: GameEngine 
         </div>
       </div>
       <p className="muted small">
-        Turn on <strong>Auto</strong> in a bet panel to start. Both panels share these limits.
+        Open <strong>Auto</strong> in a bet panel and press Start auto play. Both panels share these limits.
       </p>
       {L.active && (
         <button className="btn-stop" onClick={() => engine.stopAuto()}>

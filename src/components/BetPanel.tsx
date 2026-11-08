@@ -1,12 +1,13 @@
+import { useState } from 'react';
 import { Chip, Coin, Feather } from '../art/Tokens';
 import { chanceFor } from '../game/engine';
 import type { GameEngine } from '../game/GameEngine';
 import { fmt, fmtX, parseAmount, parseNum } from '../game/format';
-import type { GameState } from '../game/types';
+import type { GameState, RoundsOption } from '../game/types';
 import { AutoIcon, CashOutIcon } from './icons';
 
 type Variant = 'gold' | 'win' | 'raised' | 'done';
-type Tone = 'idle' | 'gold' | 'live' | 'win' | 'loss' | 'auto';
+type Tone = 'idle' | 'gold' | 'auto' | 'live' | 'win' | 'loss';
 
 interface ButtonState {
   label: string;
@@ -16,10 +17,17 @@ interface ButtonState {
 }
 
 const CHIPS = [10, 50, 100, 500];
+const ROUND_OPTIONS: RoundsOption[] = [10, 25, 50, 100, 'inf'];
 const SLOT_COLORS = ['#39d0ff', '#ffd23f'];
+/** Lowest auto cash-out the engine accepts. */
+const MIN_CASHOUT = 1.01;
 
 export function BetPanel({ index, s, engine, hotkey = null }: { index: number; s: GameState; engine: GameEngine; hotkey?: string | null }) {
   const sl = s.slots[index];
+  // the Auto toggle opens this bet's auto play settings in the panel; the light shows it running
+  const [autoOpen, setAutoOpen] = useState(false);
+  const L = s.lim;
+  const autoStatus = L.active ? `${L.rounds === 'inf' ? '∞' : L.left} left · net ${L.net >= 0 ? '+' : ''}${fmt(L.net)}` : 'Off';
   const a = parseAmount(sl.amountStr);
   const b = sl.bet;
   const ph = s.phase;
@@ -35,74 +43,160 @@ export function BetPanel({ index, s, engine, hotkey = null }: { index: number; s
   else if (b && b.cashedAt !== null)
     btn = { label: 'Collected', sub: `+${fmt(b.amount * b.cashedAt - b.amount)} at ${fmtX(b.cashedAt)}`, variant: 'done' };
   else if (b && ph === 'waiting')
-    btn = { label: b.auto ? 'Cancel auto' : 'Cancel bet', sub: `${fmt(b.amount)} placed · launch in ${waitLeft}s`, variant: 'raised' };
-  else if (sl.autoOn) btn = { label: 'Auto bet on', sub: `${fmt(a)} next round`, variant: 'raised', disabled: true };
+    btn = { label: b.auto ? 'Cancel auto' : 'Cancel', sub: `${fmt(b.amount)} placed · launch in ${waitLeft}s`, variant: 'raised' };
+  else if (sl.autoOn) btn = { label: 'Auto bet', sub: `${fmt(a)} next round`, variant: 'raised', disabled: true };
   else if (ph === 'waiting') btn = { label: 'Place bet', sub: `${fmt(a)} · launch in ${waitLeft}s`, variant: 'gold' };
   else if (sl.queued) btn = { label: 'Cancel queued', sub: `${fmt(a)} · next round`, variant: 'raised' };
   else btn = { label: 'Bet next round', sub: `${fmt(a)} · queue for launch`, variant: 'gold' };
 
-  // status line under the title
-  let status = 'Ready';
-  let tone: Tone = 'idle';
-  if (b && ph === 'flying' && b.cashedAt === null) [status, tone] = ['In flight', 'live'];
-  else if (b && b.cashedAt !== null) [status, tone] = [`Collected at ${fmtX(b.cashedAt)}`, 'win'];
-  else if (b && ph === 'crashed') [status, tone] = ['Caught', 'loss'];
-  else if (b) [status, tone] = ['Bet placed', 'gold'];
-  else if (sl.queued) [status, tone] = ['Queued', 'gold'];
-  else if (sl.autoOn) [status, tone] = ['Auto bet', 'auto'];
-
   const live = !!b && ph === 'flying' && b.cashedAt === null;
+
+  let status: { text: string; tone: Tone };
+  if (live) status = { text: 'In flight', tone: 'live' };
+  else if (b && b.cashedAt !== null) status = { text: `Collected at ${fmtX(b.cashedAt)}`, tone: 'win' };
+  else if (b && ph === 'crashed') status = { text: 'Caught', tone: 'loss' };
+  else if (b) status = { text: 'Bet placed', tone: 'gold' };
+  else if (sl.queued) status = { text: 'Queued for next round', tone: 'gold' };
+  else if (sl.autoOn) status = { text: 'Auto bet on', tone: 'auto' };
+  else status = { text: 'Ready', tone: 'idle' };
+
   const tg = parseNum(sl.targetStr);
-  const odds = tg >= 1.01 ? `${chanceFor(tg).toFixed(1)}% · wins ${fmt(a * tg)}` : 'Enter 1.01× or more';
+  const odds =
+    tg >= MIN_CASHOUT ? `Chance ${chanceFor(tg).toFixed(1)}% · pays ${fmtX(tg)} · wins ${fmt(a * tg)}` : `Enter ${fmtX(MIN_CASHOUT)} or more`;
 
   return (
-    <section className={`bp${live ? ' bp--live' : ''}${sl.autoOn ? ' bp--auto' : ''}`} aria-label={title}>
-      <header className="bp__head">
-        <span className="bp__icon">
-          <Feather color={SLOT_COLORS[index]} />
-        </span>
-        <div className="bp__title">
-          <strong>{title}</strong>
-          <span className={`bp__status bp__status--${tone}`}>
-            <i aria-hidden="true" />
-            {status}
+    <section className={`bet-panel${live ? ' bet-panel--live' : ''}${sl.autoOn ? ' bet-panel--auto' : ''}`} aria-label={title}>
+      <header className="bet-panel__head">
+        <div className="bet-panel__title">
+          <span className="bet-panel__icon" aria-hidden="true">
+            <Feather color={SLOT_COLORS[index]} size={18} />
+          </span>
+          <span className="bet-panel__name">
+            <span className="bet-panel__label">{title}</span>
+            <span className={`bet-panel__state bet-panel__state--${status.tone}`}>{status.text}</span>
           </span>
         </div>
-        <div className="bp__toggles">
-          <button className="toggle" aria-pressed={sl.autoOn} onClick={() => engine.toggleAuto(index)} title="Bet every round automatically">
-            <AutoIcon size={14} /> Auto <i aria-hidden="true" />
+        <div className="bet-panel__toggles">
+          <button
+            className={`toggle${sl.autoOn ? ' is-on' : ''}`}
+            aria-expanded={autoOpen}
+            aria-controls={`auto-${index}`}
+            title="Auto play"
+            onClick={() => setAutoOpen((o) => !o)}
+          >
+            <AutoIcon size={12} />
+            Auto
           </button>
-          <button className="toggle" aria-pressed={sl.cashOn} onClick={() => engine.toggleCashOut(index)} title="Cash out automatically at a multiplier">
-            <CashOutIcon size={14} /> Cash-out <i aria-hidden="true" />
+          <button
+            className={`toggle toggle--cash${sl.cashOn ? ' is-on' : ''}`}
+            aria-pressed={sl.cashOn}
+            title="Auto cash-out"
+            onClick={() => engine.toggleCashOut(index)}
+          >
+            <CashOutIcon size={12} />
+            Cash-out
           </button>
         </div>
       </header>
 
-      <div className="bp__stake">
-        <Coin size={26} />
-        <div className="bp__field">
-          <label htmlFor={`amt-${index}`}>Stake</label>
-          <input
-            id={`amt-${index}`}
-            className="num"
-            inputMode="decimal"
-            value={sl.amountStr}
-            onChange={(ev) => engine.setAmountText(index, ev.target.value)}
-            onBlur={() => engine.normalizeAmount(index)}
-          />
+      <div className="bet-panel__body">
+        <div className="bet-panel__controls">
+          <div className="amount">
+            <Coin size={19} />
+            <div className="amount__field">
+              <label className="amount__label" htmlFor={`amt-${index}`}>
+                Stake
+              </label>
+              <input
+                id={`amt-${index}`}
+                className="amount__input num"
+                inputMode="decimal"
+                value={sl.amountStr}
+                onChange={(ev) => engine.setAmountText(index, ev.target.value)}
+                onBlur={() => engine.normalizeAmount(index)}
+              />
+            </div>
+            <div className="amount__steps">
+              <button className="step" aria-label={`Halve ${title}`} onClick={() => engine.setAmount(index, engine.amountOf(index) / 2)}>
+                ½
+              </button>
+              <button className="step" aria-label={`Double ${title}`} onClick={() => engine.setAmount(index, engine.amountOf(index) * 2)}>
+                2×
+              </button>
+            </div>
+          </div>
+          <div className="chips">
+            {CHIPS.map((v) => (
+              <button key={v} className="chip" aria-label={`Add ${v}`} onClick={() => engine.setAmount(index, engine.amountOf(index) + v)}>
+                <Chip value={v} size={28} />
+              </button>
+            ))}
+            <button className="chip-max" aria-label="Bet maximum" onClick={() => engine.setAmount(index, s.balance)}>
+              Max
+            </button>
+          </div>
         </div>
-        <button className="step" aria-label={`Halve ${title}`} onClick={() => engine.setAmount(index, engine.amountOf(index) / 2)}>
-          ½
-        </button>
-        <button className="step" aria-label={`Double ${title}`} onClick={() => engine.setAmount(index, engine.amountOf(index) * 2)}>
-          2×
+        <button className={`big-btn big-btn--${btn.variant}`} onClick={() => engine.mainAction(index)} disabled={btn.disabled}>
+          <svg className="big-btn__mark" width="60" height="60" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" strokeWidth="3" />
+            <path d="M24 2v12M24 34v12M2 24h12M34 24h12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <span className="big-btn__label">{btn.label}</span>
+          <span className="big-btn__sub num">{btn.sub}</span>
+          {hotkey && !btn.disabled && (
+            <kbd className="big-btn__key" aria-hidden="true">
+              {hotkey}
+            </kbd>
+          )}
         </button>
       </div>
 
+      {autoOpen && (
+        <div className="auto-row" id={`auto-${index}`}>
+          <div className="auto-row__head">
+            <span className="label">Auto play</span>
+            <span className={`auto-row__status num${L.active ? ' text-win' : ''}`}>{autoStatus}</span>
+          </div>
+          <div className="auto-row__rounds">
+            <span className="label" id={`rounds-${index}`}>
+              Rounds
+            </span>
+            <div className="segmented" role="group" aria-labelledby={`rounds-${index}`}>
+              {ROUND_OPTIONS.map((r) => (
+                <button
+                  key={String(r)}
+                  className={`segmented__btn${L.rounds === r ? ' is-on' : ''}`}
+                  aria-pressed={L.rounds === r}
+                  disabled={L.active}
+                  onClick={() => engine.setRounds(r)}
+                >
+                  {r === 'inf' ? '∞' : r}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid-2">
+            <label className="auto-row__field">
+              <span className="label">Stop on profit</span>
+              <input className="input num" inputMode="decimal" placeholder="Off" value={L.profitStr} onChange={(e) => engine.setLimit('profitStr', e.target.value)} />
+            </label>
+            <label className="auto-row__field">
+              <span className="label">Stop on loss</span>
+              <input className="input num" inputMode="decimal" placeholder="Off" value={L.lossStr} onChange={(e) => engine.setLimit('lossStr', e.target.value)} />
+            </label>
+          </div>
+          <button className={`auto-row__go ${sl.autoOn ? 'btn-stop' : 'btn-auto'}`} onClick={() => engine.toggleAuto(index)}>
+            {sl.autoOn ? 'Stop auto play' : 'Start auto play'}
+          </button>
+        </div>
+      )}
+
       {sl.cashOn && (
-        <div className="bp__target">
-          <label htmlFor={`tgt-${index}`}>Cash out at</label>
-          <div className="bp__target-field">
+        <div className="cashout-row">
+          <label htmlFor={`tgt-${index}`} className="label">
+            Cash out at
+          </label>
+          <div className="field field--small">
             <input
               id={`tgt-${index}`}
               className="num"
@@ -110,36 +204,11 @@ export function BetPanel({ index, s, engine, hotkey = null }: { index: number; s
               value={sl.targetStr}
               onChange={(ev) => engine.setTargetText(index, ev.target.value)}
             />
-            <span>×</span>
+            <span className="field__suffix">×</span>
           </div>
-          <span className="bp__odds num">{odds}</span>
+          <span className="muted num">{odds}</span>
         </div>
       )}
-
-      <div className="bp__chips">
-        {CHIPS.map((v) => (
-          <button key={v} className="chip" aria-label={`Add ${v}`} onClick={() => engine.setAmount(index, engine.amountOf(index) + v)}>
-            <Chip value={v} size={40} />
-          </button>
-        ))}
-        <button className="chip-max" aria-label="Bet maximum" onClick={() => engine.setAmount(index, s.balance)}>
-          MAX
-        </button>
-      </div>
-
-      <button className={`big-btn big-btn--${btn.variant}`} onClick={() => engine.mainAction(index)} disabled={btn.disabled}>
-        <span className="big-btn__label">{btn.label}</span>
-        <span className="big-btn__sub num">{btn.sub}</span>
-        {hotkey && !btn.disabled && (
-          <kbd className="big-btn__key" aria-hidden="true">
-            {hotkey}
-          </kbd>
-        )}
-        <svg className="big-btn__mark" viewBox="0 0 48 48" aria-hidden="true">
-          <circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" strokeWidth="3" />
-          <path d="M24 2v12M24 34v12M2 24h12M34 24h12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-        </svg>
-      </button>
     </section>
   );
 }

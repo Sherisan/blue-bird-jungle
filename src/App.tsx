@@ -111,17 +111,22 @@ export default function App() {
         />
 
         <div className="layout">
-          <Stage
-            s={s}
-            onDismissToast={dismissToast}
-            onOpenFairness={() => setMenu(true)}
-            reducedMotion={settings.reducedMotion}
-            steering={settings.steering}
-          />
-          <aside className="rail" aria-label="Bets">
-            {s.slots.map((_, i) => (
-              <BetPanel key={i} index={i} s={s} engine={engine} hotkey={settings.hotkeys ? (i === 0 ? 'Space' : '2') : null} />
-            ))}
+          <main className="layout__main">
+            <Stage
+              s={s}
+              onDismissToast={dismissToast}
+              onOpenFairness={() => setMenu(true)}
+              reducedMotion={settings.reducedMotion}
+              steering={settings.steering}
+            />
+          </main>
+
+          <aside className="layout__side" aria-label="Bets and history">
+            <div className="slots">
+              {s.slots.map((_, i) => (
+                <BetPanel key={i} index={i} s={s} engine={engine} hotkey={settings.hotkeys ? (i === 0 ? 'Space' : '2') : null} />
+              ))}
+            </div>
             <RailTabs rows={s.rows} history={s.history} stats={s.stats} />
           </aside>
         </div>

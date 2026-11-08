@@ -241,6 +241,14 @@ const STARS = Array.from({ length: 64 }, (_, i) => ({
   tw: rand(i + 400) > 0.72 ? rand(i + 500) * 4 : -1,
 })).filter((st) => Math.hypot(st.x - 860, st.y - 96) > 72);
 
+/** Stars for the sky above the frame (y < 0), seen when a tall (phone) stage fits the scene to its width. */
+const HIGH_STARS = Array.from({ length: 140 }, (_, i) => ({
+  x: Math.round(rand(i + 600) * 1000),
+  y: -Math.round(rand(i + 700) * 880),
+  r: 0.5 + rand(i + 800) * 1.2,
+  o: 0.4 + rand(i + 900) * 0.5,
+}));
+
 /** A row of rounded treetops as one closed silhouette. */
 function canopyPath(y: number, seed: number, minR: number, maxR: number, bottom = 470) {
   let d = `M0 ${bottom} L0 ${y}`;
@@ -263,7 +271,8 @@ const HILLS =
 
 // ---- layers ---------------------------------------------------------------------------
 
-export const SceneSky = memo(function SceneSky() {
+/** The sky; `top` is where its gradient starts (above 0 on phones, which show sky above the frame). */
+export const SceneSky = memo(function SceneSky({ top = 0 }: { top?: number }) {
   const id = useId().replace(/:/g, '');
   return (
     <g>
@@ -308,7 +317,15 @@ export const SceneSky = memo(function SceneSky() {
           <stop offset="1" stopColor="#bfefff" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect width="1000" height="560" fill={`url(#${id}-sky)`} />
+      {/* night sky continuing above the frame, shown when a tall (phone) stage fits the scene to its width */}
+      <rect y="-900" width="1000" height="901" fill="#020716" />
+      {/* the sky gradient, which on phones stretches up to the top of the stage */}
+      <rect y={top} width="1000" height={560 - top} fill={`url(#${id}-sky)`} />
+      <g fill="#fff">
+        {HIGH_STARS.map((st, i) => (
+          <circle key={i} cx={st.x} cy={st.y} r={st.r.toFixed(2)} opacity={st.o.toFixed(2)} />
+        ))}
+      </g>
 
       {/* nebula and a soft aurora high in the sky */}
       <g style={{ filter: 'blur(26px)' }}>
@@ -790,19 +807,26 @@ export const SceneBank = memo(function SceneBank() {
   );
 });
 
-/** Dark leaves, vines and glowing flowers that frame the shot. */
-export const SceneForeground = memo(function SceneForeground() {
+/**
+ * Dark leaves, vines and glowing flowers that frame the shot. `canopy` hangs leaves and vines from
+ * the top corners; tall (phone) stages leave it off, since open sky continues above the scene there.
+ */
+export const SceneForeground = memo(function SceneForeground({ canopy = true }: { canopy?: boolean }) {
   return (
     <g>
-      {/* canopy hanging into the top corners, slightly soft for depth */}
-      <g style={{ filter: 'blur(1.3px)' }}>
-        <BananaLeaf x={40} y={-34} r={152} s={0.78} fill="#04140f" vein="#0c2c22" />
-        <Monstera x={130} y={-50} r={196} s={0.62} fill="#051812" vein="#0e3328" />
-        <BananaLeaf x={994} y={-30} r={204} s={0.74} fill="#04140f" vein="#0c2c22" />
-      </g>
-      <Vine d="M40 0 C46 50 34 100 42 160" leaves={[[44, 40, 30], [38, 80, -30], [42, 124, 30], [42, 158, -20]]} />
-      <Vine d="M96 0 C92 30 100 60 94 92" leaves={[[94, 30, -30], [96, 64, 30], [94, 90, -20]]} />
-      <Vine d="M968 0 C960 60 974 120 962 210" leaves={[[964, 50, 30], [970, 110, -30], [964, 170, 30], [962, 208, -10]]} />
+      {canopy && (
+        <>
+          {/* canopy hanging into the top corners, slightly soft for depth */}
+          <g style={{ filter: 'blur(1.3px)' }}>
+            <BananaLeaf x={40} y={-34} r={152} s={0.78} fill="#04140f" vein="#0c2c22" />
+            <Monstera x={130} y={-50} r={196} s={0.62} fill="#051812" vein="#0e3328" />
+            <BananaLeaf x={994} y={-30} r={204} s={0.74} fill="#04140f" vein="#0c2c22" />
+          </g>
+          <Vine d="M40 0 C46 50 34 100 42 160" leaves={[[44, 40, 30], [38, 80, -30], [42, 124, 30], [42, 158, -20]]} />
+          <Vine d="M96 0 C92 30 100 60 94 92" leaves={[[94, 30, -30], [96, 64, 30], [94, 90, -20]]} />
+          <Vine d="M968 0 C960 60 974 120 962 210" leaves={[[964, 50, 30], [970, 110, -30], [964, 170, 30], [962, 208, -10]]} />
+        </>
+      )}
       {/* the nearest leaves are slightly soft, for depth of field */}
       <g style={{ filter: 'blur(1.4px)' }}>
         <BananaLeaf x={1010} y={560} r={-28} s={1.1} fill="#061a16" vein="#0f3a2c" />

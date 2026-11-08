@@ -3,7 +3,8 @@
 .stage {
   position: relative;
   width: 100%;
-  height: var(--stage-h);
+  aspect-ratio: 1000 / 560;
+  min-height: 360px;
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -25,6 +26,44 @@
   width: calc(100% - 24px);
   height: calc(100% - 24px);
   display: block;
+}
+
+@media (max-width: 720px) {
+  /* phones: the scene fits the stage's width (see Stage) and the extra height is sky for the read-outs */
+  .stage {
+    min-height: 270px;
+  }
+  .stage__svg {
+    inset: 6px;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+  }
+}
+
+/*
+ * phones: the stage runs edge to edge and shows the whole width of the scene (see Stage), with a
+ * band of sky above for the read-outs
+ */
+@media (max-width: 560px) {
+  .stage {
+    width: auto;
+    margin-inline: calc(-1 * var(--shell-pad));
+    min-height: calc(95vw + 140px);
+    border-radius: 0;
+    border-inline: 0;
+  }
+  .stage__svg {
+    inset: 12px;
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+  }
+}
+
+/* laptops and desktops: the stage takes the width it is given, but stays within the window's height */
+@media (min-width: 900px) {
+  .stage {
+    max-height: calc(100vh - 120px);
+  }
 }
 
 .stage__vignette,

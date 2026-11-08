@@ -62,8 +62,4 @@
   --grad-gold: linear-gradient(180deg, #fff1c4 0%, #f4d78e 16%, #d9b45a 58%, #a87a2a 100%);
   --grad-win: linear-gradient(180deg, #c9ffe3 0%, #8ff5c0 16%, #3fd68a 60%, #1f9a5a 100%);
   --grad-loss: linear-gradient(180deg, #ffb1a8 0%, #ff6a5c 45%, #d4463a 100%);
-
-  /* layout */
-  --rail-w: 384px;
-  --stage-h: clamp(460px, calc(100vh - 150px), 820px);
 }

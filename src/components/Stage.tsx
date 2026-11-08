@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Bird, Net, NetShell, type BirdState } from '../art/Bird';
 import { Clouds } from '../art/Clouds';
 import { MUZZLE_OFFSET, Poacher, type PoacherMood } from '../art/Poacher';
@@ -9,6 +9,9 @@ import type { GameState } from '../game/types';
 import { CloseIcon, HistoryIcon, ShieldIcon } from './icons';
 import { useSteering } from './useSteering';
 
+/** The scene's size in scene units (its viewBox). */
+const SCENE_W = 1000;
+const SCENE_H = 560;
 /** Seconds the net takes to reach the bird after the trigger. */
 const NET_T = 0.28;
 /** Azul's size on the stage. */
@@ -56,6 +59,24 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   const e = ph === 'crashed' ? (now - s.crashAt) / 1000 : 0;
   const waitLeft = Math.max(0, (s.waitEnd - now) / 1000);
   const steer = useSteering(s, steering);
+  // a stage taller than the scene (phones, narrow windows) fits the scene to its width with sky
+  // above for the read-outs; wider stages fill the frame and crop some sky
+  const [tall, setTall] = useState(false);
+  // on tall stages, the scene y of the top of the stage, where the night sky starts
+  const [skyTop, setSkyTop] = useState(0);
+  useEffect(() => {
+    const svg = steer.svgRef.current;
+    if (!svg) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      const r = width > 0 ? height / width : 0;
+      const isTall = r > SCENE_H / SCENE_W;
+      setTall(isTall);
+      setSkyTop(isTall ? Math.floor(SCENE_H - r * SCENE_W) : 0);
+    });
+    ro.observe(svg);
+    return () => ro.disconnect();
+  }, [steer.svgRef]);
   // Where the round ended on screen: wherever Azul actually was (it may have been steered).
   const cx = steer.crash?.x ?? s.crashX;
   const cy = steer.crash?.y ?? s.crashY;
@@ -207,12 +228,12 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
         <svg
           ref={steer.svgRef}
           className="stage__svg"
-          viewBox="0 0 1000 560"
-          preserveAspectRatio="xMidYMax slice"
+          viewBox={`0 0 ${SCENE_W} ${SCENE_H}`}
+          preserveAspectRatio={`xMidYMax ${tall ? 'meet' : 'slice'}`}
           role="img"
           aria-label="Azul the blue macaw over a moonlit jungle lagoon while Rato the poacher aims a net launcher"
         >
-          <SceneSky />
+          <SceneSky top={skyTop} />
           <Clouds x={s.cloudX} />
           <SceneFauna />
           <SceneJungle />
@@ -294,7 +315,7 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
           <g transform={POACHER_TRANSFORM} style={{ filter: 'drop-shadow(2px -1px 0 rgba(150, 220, 255, 0.35))' }}>
             <Poacher mood={mood} aim={aim} recoil={-9 * kick} puff={ph === 'crashed' && e < 0.5 ? e / 0.5 : -1} bubble={bubble} />
           </g>
-          <SceneForeground />
+          <SceneForeground canopy={!tall} />
         </svg>
       </div>
 
