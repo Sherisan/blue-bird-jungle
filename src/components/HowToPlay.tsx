@@ -36,7 +36,7 @@ export function HowToPlay({ onClose, initialTab = 'play' }: { onClose: () => voi
     <div className="modal" role="dialog" aria-modal="true" aria-labelledby="help-title" onClick={onClose}>
       <div className="modal__card" onClick={(e) => e.stopPropagation()}>
         <div className="modal__head">
-          <h2 id="help-title">Blue Bird · Help</h2>
+          <h2 id="help-title">Blue Bird Jungle · Help</h2>
           <button ref={closeRef} className="icon-btn" aria-label="Close help" onClick={onClose}>
             <CloseIcon />
           </button>

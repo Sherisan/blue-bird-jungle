@@ -13,7 +13,7 @@ export function KeyArt({ width = 1000, cover = false }: { width?: number; cover?
       height={cover ? '100%' : (width * 560) / 1000}
       preserveAspectRatio={cover ? 'xMidYMid slice' : undefined}
       role="img"
-      aria-label="Blue Bird key art: Azul the blue macaw escapes over a moonlit jungle waterfall while Rato the poacher takes aim"
+      aria-label="Blue Bird Jungle key art: Azul the blue macaw escapes over a moonlit jungle waterfall while Rato the poacher takes aim"
     >
       <SceneSky />
       <Clouds x={0} />

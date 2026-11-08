@@ -1,8 +1,8 @@
 {
-  "name": "blue-bird",
+  "name": "blue-bird-jungle",
   "private": true,
   "version": "0.1.0",
-  "description": "Blue Bird: a crash-style demo game. Cash out before the poacher nets the macaw.",
+  "description": "Blue Bird Jungle: a crash-style demo game. Cash out before the poacher nets the macaw.",
   "type": "module",
   "scripts": {
     "dev": "vite",

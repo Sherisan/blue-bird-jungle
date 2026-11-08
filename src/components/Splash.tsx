@@ -20,7 +20,7 @@ export function Splash({ onStart }: { onStart: (withSound: boolean) => void }) {
         <Logo size={84} />
         <span className="kicker">Crash world · Blue jungle</span>
         <h1 id="splash-title" className="splash__title">
-          Blue Bird
+          Blue Bird <span className="splash__title-sub">Jungle</span>
         </h1>
         <p className="splash__tag">Azul takes off, the multiplier climbs. Cash out before the poacher&rsquo;s net lands.</p>
         <div className="splash__facts">

@@ -1,4 +1,4 @@
-# Blue Bird design guide
+# Blue Bird Jungle design guide
 
 Everything visual in the game is code. This guide maps each design piece to the file that draws it, so you can change the look in VS Code. Screenshots of the current build are in `design/screens/`; exported SVGs of every character and token are in `public/assets/`.
 

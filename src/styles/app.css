@@ -1158,6 +1158,17 @@
   filter: drop-shadow(0 6px 24px rgba(57, 208, 255, 0.45));
 }
 
+/* "Jungle" sits under BLUE BIRD as a smaller, widely tracked line, so the
+   lockup stays two big lines tall instead of three. padding-left balances the
+   trailing letter-spacing so the word stays centred. */
+.splash__title-sub {
+  display: block;
+  margin-top: 0.12em;
+  padding-left: 0.5em;
+  font-size: 0.4em;
+  letter-spacing: 0.5em;
+}
+
 .splash__tag {
   max-width: 440px;
   font-size: 17px;
@@ -1625,7 +1636,8 @@ kbd {
     display: none;
   }
   .brand__name {
-    font-size: 20px;
+    font-size: 17px;
+    letter-spacing: 0.04em;
   }
   .toolbar .icon-btn {
     width: 38px;

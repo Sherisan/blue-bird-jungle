@@ -50,8 +50,8 @@ export function Header({ balance, soundOn, sessionMs, onMenu, onRules, onSetting
         <div className="brand">
           <Logo size={44} />
           <div className="brand__text">
-            <span className="brand__name">Blue Bird</span>
-            <span className="brand__sub">Jungle crash · RTP 99% · up to 10 000×</span>
+            <span className="brand__name">Blue Bird Jungle</span>
+            <span className="brand__sub">Crash game · RTP 99% · up to 10 000×</span>
           </div>
         </div>
       </div>

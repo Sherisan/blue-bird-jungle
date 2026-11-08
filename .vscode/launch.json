@@ -2,20 +2,20 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Play Blue Bird in Chrome (debug)",
+      "name": "Play Blue Bird Jungle in Chrome (debug)",
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "Blue Bird: dev server"
+      "preLaunchTask": "Blue Bird Jungle: dev server"
     },
     {
-      "name": "Play Blue Bird in Edge (debug)",
+      "name": "Play Blue Bird Jungle in Edge (debug)",
       "type": "msedge",
       "request": "launch",
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "Blue Bird: dev server"
+      "preLaunchTask": "Blue Bird Jungle: dev server"
     }
   ]
 }

@@ -1,4 +1,4 @@
-# Blue Bird: crash game front end
+# Blue Bird Jungle: crash game front end
 
 A crash-style betting game built in **React 18 + TypeScript + Vite**, reskinned from Duck Season into a moonlit **blue jungle**.
 
@@ -10,7 +10,7 @@ Everything is drawn as SVG in React components: the macaw, the poacher and his b
 
 ## Play it right now
 
-`release/blue-bird.html` is a finished, minified build of the whole game in one file. Double-click it to play in your browser, no install needed (an internet connection loads the fonts). To publish it, upload that one file to any web host.
+`release/blue-bird-jungle.html` is a finished, minified build of the whole game in one file. Double-click it to play in your browser, no install needed (an internet connection loads the fonts). To publish it, upload that one file to any web host.
 
 ## Open it in Visual Studio Code
 
@@ -22,7 +22,7 @@ Everything is drawn as SVG in React components: the macaw, the poacher and his b
 
 The folder comes set up for VS Code:
 
-- `.vscode/tasks.json`: **Terminal → Run Task…** has *Blue Bird: install*, *dev server*, *production build*, *type-check* and *export SVG assets*. The dev server is the default build task (Ctrl/Cmd+Shift+B).
+- `.vscode/tasks.json`: **Terminal → Run Task…** has *Blue Bird Jungle: install*, *dev server*, *production build*, *type-check* and *export SVG assets*. The dev server is the default build task (Ctrl/Cmd+Shift+B).
 - `.vscode/launch.json`: press **F5** to start the dev server and open the game in Chrome or Edge with breakpoints in your TypeScript.
 - `.vscode/settings.json`: format on save with Prettier, and the project's own TypeScript.
 - `.vscode/extensions.json`: VS Code offers to install Prettier.
@@ -124,7 +124,7 @@ src/
     global.css             Reset, utilities, all keyframes
     app.css                Layout, top bar, bet panels, drawer, modal
     stage.css              Stage overlays and SVG animation hooks
-release/blue-bird.html    Ready-to-play single-file build
+release/blue-bird-jungle.html    Ready-to-play single-file build
 design/                   DESIGN.md (design guide) and screens/ (screenshots)
 .vscode/                  Tasks, debug launch, editor settings, extension tips
 public/assets/             Exported SVGs: poacher-*.svg, bird-*.svg, chip-*.svg, coin, feather, logo, key-art
