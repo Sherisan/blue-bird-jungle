@@ -1,9 +1,22 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Bird, Net, NetShell, type BirdState } from '../art/Bird';
+import { Cage, LOCK_POINT } from '../art/Cage';
 import { Clouds } from '../art/Clouds';
 import { MUZZLE_OFFSET, Poacher, type PoacherMood } from '../art/Poacher';
-import { PERCH, SceneBank, SceneFauna, SceneForeground, SceneJungle, SceneLight, SceneSky } from '../art/Scene';
-import { GUN_PIVOT, HOLD_MS, POACHER_POS, POACHER_SCALE, POACHER_TRANSFORM, WAIT_MS, aimAngle } from '../game/engine';
+import { PERCH, SceneBank, SceneFauna, SceneForeground, SceneJungle, SceneLight, SceneNearShore, SceneSky } from '../art/Scene';
+import { captureFrame, type CageSpot } from '../game/capture';
+import {
+  CAPTURE,
+  HOLD_MS,
+  POACHER_POS,
+  POACHER_SCALE,
+  POACHER_SCALE_WIDE,
+  WAIT_MS,
+  aimAngle,
+  gunPivot,
+  poacherTransform,
+  sightRadius,
+} from '../game/engine';
 import { fmt, fmtX } from '../game/format';
 import type { GameState } from '../game/types';
 import { CloseIcon, HistoryIcon, ShieldIcon } from './icons';
@@ -12,14 +25,18 @@ import { useSteering } from './useSteering';
 /** The scene's size in scene units (its viewBox). */
 const SCENE_W = 1000;
 const SCENE_H = 560;
+/** Phones see the whole scene plus a strip of near shore below it, and sky above for the read-outs. */
+const PHONE_H = 680;
 /** Seconds the net takes to reach the bird after the trigger. */
-const NET_T = 0.28;
-/** Azul's size on the stage. */
-const BIRD_SCALE = 0.9;
+const NET_T = CAPTURE.net;
+/** The top of the branch under Azul's feet, and how far below its body its feet are at full size. */
+const BRANCH_Y = 418.5;
+const BIRD_FEET = 25;
 /** Lagoon surface in scene units; reflections mirror around it. */
 const WATER_Y = 456;
-/** Circumference of the countdown ring (r = 52). */
-const RING_LEN = 2 * Math.PI * 52;
+/** Where the cage stands: in front of Rato and under his gun. */
+const CAGE_WIDE: CageSpot = { x: 262, y: 534, k: 0.78 };
+const CAGE_PHONE: CageSpot = { x: 384, y: 546, k: 1.05 };
 const SPARK = 'M0 -6 L1.5 -1.5 L6 0 L1.5 1.5 L0 6 L-1.5 1.5 L-6 0 L-1.5 -1.5 Z';
 /** The multiplier bumps when it passes each of these. */
 const MILESTONES = [2, 3, 5, 10, 25, 50, 100, 250, 500, 1000];
@@ -37,12 +54,21 @@ function historyTone(m: number) {
   return 'pill--mid';
 }
 
-function muzzleAt(aim: number) {
+function muzzleAt(aim: number, k: number) {
   const a = (aim * Math.PI) / 180;
-  const x = MUZZLE_OFFSET.x * POACHER_SCALE;
-  const y = MUZZLE_OFFSET.y * POACHER_SCALE;
-  return { x: GUN_PIVOT.x + x * Math.cos(a) - y * Math.sin(a), y: GUN_PIVOT.y + x * Math.sin(a) + y * Math.cos(a) };
+  const x = MUZZLE_OFFSET.x * k;
+  const y = MUZZLE_OFFSET.y * k;
+  const pivot = gunPivot(k);
+  return { x: pivot.x + x * Math.cos(a) - y * Math.sin(a), y: pivot.y + x * Math.sin(a) + y * Math.cos(a) };
 }
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const smooth = (v: number) => {
+  const c = Math.max(0, Math.min(1, v));
+  return c * c * (3 - 2 * c);
+};
+/** Overshoots a little and settles: 0 to 1. */
+const easeOutBack = (v: number) => 1 + 2.70158 * (v - 1) ** 3 + 1.70158 * (v - 1) ** 2;
 
 interface StageProps {
   s: GameState;
@@ -58,21 +84,28 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   const t = ph === 'flying' ? (now - s.t0) / 1000 : 0;
   const e = ph === 'crashed' ? (now - s.crashAt) / 1000 : 0;
   const waitLeft = Math.max(0, (s.waitEnd - now) / 1000);
-  const steer = useSteering(s, steering);
-  // a stage taller than the scene (phones, narrow windows) fits the scene to its width with sky
-  // above for the read-outs; wider stages fill the frame and crop some sky
-  const [tall, setTall] = useState(false);
-  // on tall stages, the scene y of the top of the stage, where the night sky starts
+  // Three ways to fit the scene, as in Duck Season: a wide stage fills the frame and crops some sky,
+  // a slightly taller one shows the whole scene, and a phone also shows near shore and extra sky.
+  const [fit, setFit] = useState<'slice' | 'meet' | 'phone'>('slice');
+  // the scene y of the top of the stage on taller stages, where the night sky starts
   const [skyTop, setSkyTop] = useState(0);
+  // how much sky a wide stage cuts off the top of the scene
+  const [cropTop, setCropTop] = useState(0);
+  const wide = fit !== 'phone';
+  const hk = wide ? POACHER_SCALE_WIDE : POACHER_SCALE;
+  const dk = wide ? 0.9 : 1.1;
+  const cage = wide ? CAGE_WIDE : CAGE_PHONE;
+  const steer = useSteering(s, steering, muzzleAt(-10, hk), reducedMotion, cropTop);
   useEffect(() => {
     const svg = steer.svgRef.current;
     if (!svg) return;
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       const r = width > 0 ? height / width : 0;
-      const isTall = r > SCENE_H / SCENE_W;
-      setTall(isTall);
-      setSkyTop(isTall ? Math.floor(SCENE_H - r * SCENE_W) : 0);
+      const phone = r > PHONE_H / SCENE_W;
+      setFit(phone ? 'phone' : r > SCENE_H / SCENE_W ? 'meet' : 'slice');
+      setSkyTop(phone ? Math.floor(PHONE_H - r * SCENE_W) : r > SCENE_H / SCENE_W ? Math.floor(SCENE_H - r * SCENE_W) : 0);
+      setCropTop(r > 0 && r < SCENE_H / SCENE_W ? Math.ceil(SCENE_H - r * SCENE_W) : 0);
     });
     ro.observe(svg);
     return () => ro.disconnect();
@@ -81,38 +114,76 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   const cx = steer.crash?.x ?? s.crashX;
   const cy = steer.crash?.y ?? s.crashY;
   const face = steer.face;
+  const waitT = (now - (s.waitEnd - WAIT_MS)) / 1000;
+  const cap = ph === 'crashed' ? captureFrame(e, { x: cx, y: cy }, cage, dk, face) : null;
 
   // --- bird -----------------------------------------------------------------
   let bx: number, by: number, rot: number, birdState: BirdState;
-  if (ph === 'waiting') {
+  let birdScale = dk;
+  let birdFace: number = face;
+  if (cap) {
+    bx = cap.x;
+    by = cap.y;
+    rot = cap.rot;
+    birdState = cap.state;
+    birdScale = cap.scale;
+    birdFace = cap.face;
+  } else if (ph === 'waiting') {
     bx = PERCH.x;
-    by = PERCH.y - 4 + Math.sin(now / 420) * 1.5;
+    by = BRANCH_Y - BIRD_FEET * dk + Math.sin(now / 420) * 1.5;
     rot = -8;
     birdState = 'perch';
-  } else if (ph === 'flying') {
+    // a fresh bird pops onto the branch at the start of each round
+    birdScale = dk * easeOutBack(Math.max(0, Math.min(1, waitT / 0.35)));
+  } else {
     bx = steer.x;
     by = steer.y + Math.sin(t * 4.2) * 3;
     rot = -14 + steer.tilt * face;
     birdState = 'fly';
-  } else {
-    const f = Math.max(0, e - 0.45);
-    bx = cx + f * 40 * face;
-    by = Math.min(452, cy + 300 * f * f);
-    rot = e < NET_T ? -14 : Math.sin(e * 7) * 14 * Math.max(0, 1 - f);
-    birdState = e < NET_T ? 'fly' : 'caught';
   }
-  const netOpen = ph === 'crashed' && e >= NET_T;
-  const netScale = netOpen ? Math.min(1, 0.5 + (e - NET_T) * 5) : 0;
+  const netOpen = !!cap && cap.netScale > 0 && cap.netAlpha > 0;
+
+  // the cage's door swings back open for the next round
+  const cageDoor = cap ? cap.door : ph === 'waiting' ? Math.max(0, Math.min(1, waitT / 0.5)) : 1;
+  const lockT = cap ? e - CAPTURE.lock : -1;
+
+  // --- the sight ------------------------------------------------------------
+  // it chases Azul through the flight, and snaps on as the net flies
+  const snap = ph === 'crashed' ? smooth((e / NET_T) * 1.5) : 0;
+  const sightX = lerp(steer.aimX, cx, snap);
+  const sightY = lerp(steer.aimY, cy, snap);
+  const ring = sightRadius(Math.max(1, m));
+  const showSight = ph === 'flying' || (ph === 'crashed' && e < NET_T);
 
   // --- poacher --------------------------------------------------------------
-  const aimBase = ph === 'waiting' ? -6 : ph === 'flying' ? aimAngle(bx, by) : aimAngle(cx, cy);
+  const aimTarget =
+    ph === 'waiting'
+      ? -10
+      : ph === 'flying'
+        ? aimAngle(sightX, sightY, hk)
+        : e < NET_T
+          ? aimAngle(cx, cy, hk)
+          : e < CAPTURE.reel
+            ? aimAngle(bx, by, hk, -58, 22)
+            : -12;
+  // the gun swings to its target rather than jumping there
+  const aimRef = useRef({ angle: -10, at: 0 });
+  const aimDt = aimRef.current.at ? Math.min(0.1, Math.max(0, (now - aimRef.current.at) / 1000)) : 0;
+  aimRef.current.at = now;
+  aimRef.current.angle += (aimTarget - aimRef.current.angle) * (1 - Math.exp(-aimDt * (ph === 'crashed' && e < NET_T ? 40 : 16)));
+  const aimBase = aimRef.current.angle;
   const kick = ph === 'crashed' && e < 0.2 ? 1 - e / 0.2 : 0;
   const aim = aimBase - kick * 4;
   let mood: PoacherMood = 'idle';
   let bubble: string | null = null;
   if (ph === 'crashed') {
-    mood = e < NET_T ? 'aim' : 'cheer';
-    if (e > NET_T && e < 2.9) bubble = 'Gotcha!';
+    if (e < CAPTURE.shut) {
+      mood = 'aim';
+      if (e > NET_T) bubble = 'Gotcha!';
+    } else {
+      mood = 'cheer';
+      if (e > CAPTURE.lock) bubble = 'Locked up!';
+    }
   } else if (ph === 'flying') {
     const sinceCash = (now - s.lastCashAt) / 1000;
     if (s.lastCashAt > s.t0 && sinceCash < 1.5) {
@@ -124,13 +195,33 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   // net shell in flight
   let shell: { x: number; y: number; r: number } | null = null;
   if (ph === 'crashed' && e < NET_T) {
-    const mz = muzzleAt(aimBase);
+    const mz = muzzleAt(aimAngle(cx, cy, hk), hk);
     const q = e / NET_T;
     shell = { x: mz.x + (cx - mz.x) * q, y: mz.y + (cy - mz.y) * q - Math.sin(q * Math.PI) * 18, r: q * 540 };
   }
 
+  // the line from the gun to the net: pays out behind the shell, goes taut, then winds back in
+  let line: { d: string; end: { x: number; y: number } } | null = null;
+  if (cap && cap.line > 0) {
+    const mz = muzzleAt(aim, hk);
+    const gapX = mz.x - bx;
+    const gapY = mz.y - by;
+    const gap = Math.hypot(gapX, gapY) || 1;
+    const reach = Math.min(gap, 50 * birdScale);
+    const tipX = shell ? shell.x : bx + (gapX / gap) * reach;
+    const tipY = shell ? shell.y : by + (gapY / gap) * reach;
+    const endX = lerp(mz.x, tipX, cap.line);
+    const endY = lerp(mz.y, tipY, cap.line);
+    const hum = cap.crank !== undefined ? Math.sin(now / 16) * 1.2 : 0;
+    const sag = 4 + cap.slack * 52;
+    line = {
+      d: `M${mz.x.toFixed(1)} ${mz.y.toFixed(1)} Q${((mz.x + endX) / 2).toFixed(1)} ${((mz.y + endY) / 2 + sag + hum).toFixed(1)} ${endX.toFixed(1)} ${endY.toFixed(1)}`,
+      end: { x: endX, y: endY },
+    };
+  }
+
   // the path Azul actually flew (steered or not)
-  const trail = ph === 'waiting' ? '' : steer.path.map((q) => `${q.x.toFixed(0)},${q.y.toFixed(0)}`).join(' ');
+  const trail = ph === 'flying' || (ph === 'crashed' && e < NET_T) ? steer.path.map((q) => `${q.x.toFixed(0)},${q.y.toFixed(0)}`).join(' ') : '';
 
   // sparkle trail behind Azul while flying
   const sparks =
@@ -146,7 +237,8 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
           };
         })
       : [];
-  const reflect = Math.max(0, Math.min(1, 1 - (WATER_Y - by) / 260)) * 0.32;
+  // only over the lagoon: once Azul is hauled over the bank there is no water beneath it
+  const reflect = bx > 470 && !cap?.inside ? Math.max(0, Math.min(1, 1 - (WATER_Y - by) / 260)) * 0.32 : 0;
 
   const milestone = ph === 'flying' ? MILESTONES.filter((k) => m >= k).length : 0;
   const fe = e - NET_T;
@@ -164,7 +256,10 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
         })
       : [];
 
-  const shake = !reducedMotion && ph === 'crashed' && fe > 0 && fe < 0.4 ? 1 - fe / 0.4 : 0;
+  // the screen jolts as the net lands, and again when the cage door slams and the padlock snaps
+  const slamT = e - CAPTURE.shut;
+  const jolt = (at: number, len: number, strength: number) => (at > 0 && at < len ? (1 - at / len) * strength : 0);
+  const shake = !reducedMotion && ph === 'crashed' ? Math.max(jolt(fe, 0.4, 1), jolt(slamT, 0.24, 0.6), jolt(lockT, 0.18, 0.4)) : 0;
   const shakeX = shake ? (Math.random() - 0.5) * 14 * shake : 0;
   const shakeY = shake ? (Math.random() - 0.5) * 10 * shake : 0;
   const danger = ph === 'flying' ? Math.min(0.42, (Math.log(m) / Math.log(60)) * 0.42) : 0;
@@ -177,7 +272,7 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   if (ph === 'waiting') {
     kicker = 'Place your bets';
     kickerClass = 'kicker--gold';
-    sub = 'Bets close when Azul takes off';
+    sub = `Azul takes off in ${waitLeft.toFixed(1)}s`;
   } else if (ph === 'flying') {
     kicker = 'Bird in flight';
     kickerClass = 'kicker--game';
@@ -200,22 +295,17 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
       : [];
   const cel = s.celebrate && now - s.celebrate.at < 3000 ? s.celebrate : null;
 
-  const showCurve = (ph === 'flying' && t > 1) || ph === 'crashed';
-  let curve = '';
-  let curveTime = '';
-  let curveEnd = 1;
-  let curveMax = 2;
-  if (showCurve && s.points.length > 1) {
-    const lp = s.points[s.points.length - 1];
-    const tmax = Math.max(6, lp.t);
-    const mmax = Math.max(2, lp.m);
-    curveMax = mmax;
-    curve = s.points
-      .map((q) => `${((q.t / tmax) * 202 + 1).toFixed(1)},${(61 - (Math.log(q.m) / Math.log(mmax)) * 58).toFixed(1)}`)
-      .join(' ');
-    curveEnd = (lp.t / tmax) * 202 + 1;
-    curveTime = `${lp.t.toFixed(1)}s`;
-  }
+  const cageTransform = `translate(${cage.x} ${cage.y}) scale(${cage.k})`;
+  const birdNode = (
+    <g transform={`translate(${bx.toFixed(1)} ${by.toFixed(1)}) scale(${(birdFace * birdScale).toFixed(3)} ${birdScale.toFixed(3)}) rotate(${rot.toFixed(1)})`}>
+      <Bird state={birdState} aura={birdState === 'fly'} />
+      {netOpen && cap && (
+        <g transform={`translate(14 -6) scale(${cap.netScale.toFixed(2)})`} opacity={cap.netAlpha.toFixed(2)}>
+          <Net r={60} />
+        </g>
+      )}
+    </g>
+  );
 
   return (
     <section
@@ -228,8 +318,8 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
         <svg
           ref={steer.svgRef}
           className="stage__svg"
-          viewBox={`0 0 ${SCENE_W} ${SCENE_H}`}
-          preserveAspectRatio={`xMidYMax ${tall ? 'meet' : 'slice'}`}
+          viewBox={`0 0 ${SCENE_W} ${fit === 'phone' ? PHONE_H : SCENE_H}`}
+          preserveAspectRatio={`xMidYMax ${fit === 'slice' ? 'slice' : 'meet'}`}
           role="img"
           aria-label="Azul the blue macaw over a moonlit jungle lagoon while Rato the poacher aims a net launcher"
         >
@@ -245,7 +335,7 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
           </defs>
           {reflect > 0.01 && (
             <g clipPath={`url(#${clipId})`} opacity={reflect} style={{ filter: 'blur(1.2px)' }}>
-              <g transform={`translate(${bx.toFixed(1)} ${(2 * WATER_Y - by).toFixed(1)}) scale(${face * BIRD_SCALE} ${-BIRD_SCALE}) rotate(${rot.toFixed(1)})`}>
+              <g transform={`translate(${bx.toFixed(1)} ${(2 * WATER_Y - by).toFixed(1)}) scale(${(birdFace * birdScale).toFixed(3)} ${(-birdScale).toFixed(3)}) rotate(${rot.toFixed(1)})`}>
                 <Bird state={birdState} />
               </g>
             </g>
@@ -270,20 +360,37 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
               transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) scale(${(p.k * (0.4 + p.o)).toFixed(2)}) rotate(${(i * 30 + t * 120).toFixed(0)})`}
             />
           ))}
-          <g transform={`translate(${bx.toFixed(1)} ${by.toFixed(1)}) scale(${face * BIRD_SCALE} ${BIRD_SCALE}) rotate(${rot.toFixed(1)})`}>
-            <Bird state={birdState} aura={birdState === 'fly'} />
-            {netOpen && (
-              <g transform={`scale(${netScale.toFixed(2)})`}>
-                <Net r={46} />
-              </g>
-            )}
+          <SceneBank />
+          <SceneNearShore />
+          <g transform={cageTransform}>
+            <Cage part="back" swing={cap?.swing ?? 0} />
           </g>
-          {ph === 'flying' && (
-            <g transform={`translate(${bx.toFixed(1)} ${(by - 14).toFixed(1)})`} opacity=".85">
+          {cap?.inside && birdNode}
+          <g transform={cageTransform}>
+            <Cage part="front" door={cageDoor} lock={cap?.lock ?? 0} />
+          </g>
+          {!cap?.inside && birdNode}
+          {showSight && (
+            <g transform={`translate(${sightX.toFixed(1)} ${sightY.toFixed(1)})`} opacity=".92">
               <g className="reticle">
-                <circle r="52" fill="none" stroke="#ff6a5c" strokeWidth="1.6" strokeDasharray="14 10" />
+                <circle r="52" fill="none" stroke="rgba(5, 8, 16, 0.45)" strokeWidth="5" strokeDasharray="56 25.7" />
+                <circle r="52" fill="none" stroke="#ff6a5c" strokeWidth="2.2" strokeDasharray="56 25.7" />
               </g>
-              <path d="M-66 0 H-54 M54 0 H66 M0 -66 V-54 M0 54 V66" stroke="#ffd0c8" strokeWidth="2" strokeLinecap="round" />
+              <circle r={ring.toFixed(1)} fill="none" stroke="rgba(5, 8, 16, 0.4)" strokeWidth="4" />
+              <circle r={ring.toFixed(1)} fill="none" stroke="#ffd0c8" strokeWidth="1.3" />
+              <g strokeLinecap="round">
+                <path d="M-66 0 H-20 M20 0 H66 M0 -66 V-20 M0 20 V66" stroke="rgba(5, 8, 16, 0.45)" strokeWidth="4" />
+                <path d="M-66 0 H-20 M20 0 H66 M0 -66 V-20 M0 20 V66" stroke="#ffd0c8" strokeWidth="1.6" />
+              </g>
+              <circle r="2.4" fill="#ff6a5c" />
+            </g>
+          )}
+          {line && (
+            <g fill="none" strokeLinecap="round">
+              <path d={line.d} stroke="#20180a" strokeOpacity=".75" strokeWidth="4.4" />
+              <path d={line.d} stroke="#e6d6a4" strokeWidth="2.4" />
+              <path d={line.d} stroke="#8a6a34" strokeWidth="2.4" strokeDasharray="3 4" />
+              {!shell && <circle cx={line.end.x.toFixed(1)} cy={line.end.y.toFixed(1)} r="5" fill="#d6b06a" stroke="#20180a" strokeWidth="1.4" />}
             </g>
           )}
           {shell && (
@@ -297,9 +404,9 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
               <path d="M-10 0 L11 0" stroke="#0c2470" strokeWidth="1" />
             </g>
           ))}
-          {ph === 'crashed' && fe > 0 && fe < 1.8 && (
-            <g transform={`translate(${cx.toFixed(1)} ${Math.max(60, cy - 84).toFixed(1)}) rotate(-9)`}>
-              <g className="stamp" opacity={Math.min(1, (1.8 - fe) * 2)}>
+          {ph === 'crashed' && fe > 0 && fe < 1.3 && (
+            <g transform={`translate(${cx.toFixed(1)} ${Math.max(cropTop + 52, cy - 84).toFixed(1)}) rotate(-9)`}>
+              <g className="stamp" opacity={Math.min(1, (1.3 - fe) * 3)}>
                 <rect x="-74" y="-24" width="148" height="46" rx="9" fill="rgba(40,6,6,.55)" stroke="#ff6a5c" strokeWidth="3" />
                 <text y="10" textAnchor="middle" fontFamily="Oxanium, sans-serif" fontWeight="800" fontSize="28" letterSpacing="2" fill="#ff8d82">
                   CAUGHT!
@@ -310,12 +417,36 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
           {ph === 'crashed' && fe > 0 && fe < 0.7 && (
             <circle cx={cx} cy={cy} r={14 + fe * 120} fill="none" stroke="#dff7ff" strokeWidth="3" opacity={1 - fe / 0.7} />
           )}
-          <SceneBank />
-          <ellipse cx={POACHER_POS.x + 4} cy={POACHER_POS.y - 4} rx="58" ry="7" fill="#010a0c" opacity=".45" />
-          <g transform={POACHER_TRANSFORM} style={{ filter: 'drop-shadow(2px -1px 0 rgba(150, 220, 255, 0.35))' }}>
-            <Poacher mood={mood} aim={aim} recoil={-9 * kick} puff={ph === 'crashed' && e < 0.5 ? e / 0.5 : -1} bubble={bubble} />
+          {lockT > 0 && lockT < 0.55 && (
+            <g transform={`translate(${(cage.x + LOCK_POINT.x * cage.k).toFixed(1)} ${(cage.y + LOCK_POINT.y * cage.k).toFixed(1)})`}>
+              <circle r={8 + lockT * 90} fill="none" stroke="#fff1c4" strokeWidth="3" opacity={1 - lockT / 0.55} />
+              <path d={SPARK} fill="#fff6d2" transform={`scale(${(2.6 * (1 - lockT / 0.55) + 0.6).toFixed(2)}) rotate(${(lockT * 200).toFixed(0)})`} />
+            </g>
+          )}
+          {lockT > 0 && (
+            <g transform={`translate(${cage.x} ${Math.max(70, cage.y - 186 * cage.k).toFixed(1)}) rotate(-6)`}>
+              <g className="stamp">
+                <rect x="-70" y="-21" width="140" height="40" rx="9" fill="rgba(36,24,4,.68)" stroke="#f4d78e" strokeWidth="2.8" />
+                <text y="8" textAnchor="middle" fontFamily="Oxanium, sans-serif" fontWeight="800" fontSize="23" letterSpacing="2" fill="#ffe7a8">
+                  LOCKED!
+                </text>
+              </g>
+            </g>
+          )}
+          <ellipse cx={POACHER_POS.x + 8} cy={POACHER_POS.y - 2} rx={80 * hk + 14} ry="7" fill="#010a0c" opacity=".45" />
+          <g transform={poacherTransform(hk)} style={{ filter: 'drop-shadow(2px -1px 0 rgba(150, 220, 255, 0.35))' }}>
+            <Poacher
+              mood={mood}
+              aim={aim}
+              recoil={-9 * kick + (cap?.crank !== undefined ? -1.6 * Math.abs(Math.sin((cap.crank * Math.PI) / 180)) : 0)}
+              puff={ph === 'crashed' && e < 0.5 ? e / 0.5 : -1}
+              bubble={bubble}
+              bubbleScale={wide ? 0.72 / hk : 1.5}
+              reel={cap?.crank}
+              noCage
+            />
           </g>
-          <SceneForeground canopy={!tall} />
+          <SceneForeground canopy={fit === 'slice'} />
         </svg>
       </div>
 
@@ -348,36 +479,25 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
 
       <div className="stage__center">
         <span className={`stage__kicker ${kickerClass}`}>{kicker}</span>
-        {ph === 'waiting' ? (
-          <div className="ring" role="timer" aria-label={`Take-off in ${waitLeft.toFixed(0)} seconds`}>
-            <svg viewBox="0 0 120 120" aria-hidden="true">
-              <defs>
-                <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#fff1c4" />
-                  <stop offset=".5" stopColor="#f4d78e" />
-                  <stop offset="1" stopColor="#d9a23a" />
-                </linearGradient>
-              </defs>
-              <circle cx="60" cy="60" r="52" className="ring__track" />
-              <circle
-                cx="60"
-                cy="60"
-                r="52"
-                className="ring__fill"
-                strokeDasharray={RING_LEN}
-                strokeDashoffset={RING_LEN * (1 - waitLeft / (WAIT_MS / 1000))}
-                transform="rotate(-90 60 60)"
-              />
-            </svg>
-            <span className="ring__value num">{waitLeft.toFixed(1)}</span>
-            <span className="ring__unit">sec</span>
+        <span key={`${ph}-${milestone}`} className={`stage__mult num stage__mult--${ph}${ph === 'flying' ? ` tier-${multTier(m)}${milestone > 0 ? ' bump' : ''}` : ''}`}>
+          {ph === 'waiting' ? '1.00×' : fmtX(m)}
+        </span>
+        {ph === 'waiting' && (
+          <div className="countdown" aria-hidden="true">
+            <div className="countdown__fill" style={{ width: `${100 - (waitLeft / (WAIT_MS / 1000)) * 100}%` }} />
           </div>
-        ) : (
-          <span key={`${ph}-${milestone}`} className={`stage__mult num stage__mult--${ph}${ph === 'flying' ? ` tier-${multTier(m)}${milestone > 0 ? ' bump' : ''}` : ''}`}>
-            {fmtX(m)}
-          </span>
         )}
         <span className="stage__sub num">{sub}</span>
+      </div>
+
+      <div className="gauge">
+        <span className="gauge__label">Altitude</span>
+        <div className="gauge__track">
+          <div className="gauge__fill" style={{ width: `${Math.min(100, (Math.log(Math.max(1, m)) / Math.log(100)) * 100)}%` }} />
+          <span className="gauge__tick" style={{ left: '15%' }} />
+          <span className="gauge__tick" style={{ left: '50%' }} />
+        </div>
+        <span className="gauge__scale num">2× · 10× · 100×</span>
       </div>
 
       {coins.map((c, i) =>
@@ -425,38 +545,6 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
             <span className="celebrate__total num">+{fmt(cel.total * Math.min(1, (now - cel.at) / 1000))}</span>
             <span className="celebrate__at">collected at {fmtX(cel.mult)}</span>
           </div>
-        </div>
-      )}
-
-      {showCurve && (
-        <div className="curve">
-          <div className="curve__head">
-            <span>Flight</span>
-            <span className="num">
-              {curveTime} · peak {fmtX(m)}
-            </span>
-          </div>
-          <svg width="244" height="78" viewBox="0 0 244 78" aria-hidden="true">
-            <defs>
-              <linearGradient id={`${clipId}-area`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={ph === 'crashed' ? '#ff6a5c' : '#39d0ff'} stopOpacity=".35" />
-                <stop offset="1" stopColor={ph === 'crashed' ? '#ff6a5c' : '#39d0ff'} stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <g transform="translate(38 4)">
-              <line x1="0" y1="62" x2="204" y2="62" stroke="#26405a" />
-              <line x1="0" y1="31" x2="204" y2="31" stroke="#1c3550" strokeDasharray="3 4" />
-              <line x1="0" y1="0" x2="0" y2="62" stroke="#26405a" />
-              {curve && <polygon points={`1,61 ${curve} ${curveEnd},61`} fill={`url(#${clipId}-area)`} />}
-              <polyline points={curve} fill="none" stroke={ph === 'crashed' ? '#ff6a5c' : '#f4d78e'} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
-            </g>
-            <text x="34" y="10" textAnchor="end" className="curve__axis">
-              {fmtX(curveMax)}
-            </text>
-            <text x="34" y="68" textAnchor="end" className="curve__axis">
-              1×
-            </text>
-          </svg>
         </div>
       )}
 

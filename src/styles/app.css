@@ -3,8 +3,9 @@
 .app {
   min-height: 100vh;
   background:
-    radial-gradient(1100px 600px at 85% -15%, rgba(57, 208, 255, 0.12), transparent 70%),
-    radial-gradient(900px 640px at -12% 50%, rgba(47, 181, 122, 0.1), transparent 70%),
+    radial-gradient(1100px 600px at 85% -15%, rgba(57, 208, 255, 0.16), transparent 70%),
+    radial-gradient(900px 640px at -12% 50%, rgba(47, 181, 122, 0.13), transparent 70%),
+    radial-gradient(1000px 720px at 104% 112%, rgba(112, 86, 255, 0.16), transparent 70%),
     var(--ink);
 }
 
@@ -857,12 +858,22 @@
   gap: 3px;
 }
 
+/* the compact controls inside a bet panel (the menu's auto play panel keeps the larger ones) */
 .auto-row .input {
   height: 28px;
+  padding: 0 9px;
+  font-size: 13px;
+}
+
+.auto-row .segmented {
+  gap: 3px;
+  padding: 3px;
+  border-radius: 9px;
 }
 
 .auto-row .segmented__btn {
   height: 24px;
+  font-size: 12px;
 }
 
 .auto-row__go {
@@ -1846,6 +1857,20 @@ kbd {
   animation: none !important;
 }
 
+.reduce-motion .rato-breathe,
+.reduce-motion .rato-coat,
+.reduce-motion .rato-charm,
+.reduce-motion .rato-smoke,
+.reduce-motion .rato-ember,
+.reduce-motion .gun-glow {
+  animation: none !important;
+}
+
+.reduce-motion .meteor,
+.reduce-motion .rato-smoke {
+  display: none;
+}
+
 /* ======================================================================
    Bold pass: gradient-edged cards, glossy bet buttons, bigger chips.
    ====================================================================== */
@@ -2024,18 +2049,20 @@ kbd {
 }
 
 /*
- * phones: each bet panel is two slim rows (stake, then name and toggles) with the bet button
- * beside both; the chips are dropped, and the state shows as a coloured dot
+ * phones: each bet panel is three rows, as in Duck Season: name and toggles across the top, then
+ * the stake and the chips with the bet button beside them
  */
 @media (max-width: 560px) {
   .bet-panel {
     display: grid;
-    grid-template-columns: auto 1fr 40%;
+    /* the middle column lets the toggles run wider than the bet button below them */
+    grid-template-columns: minmax(0, 1fr) auto minmax(112px, 37%);
     grid-template-areas:
+      'title toggles toggles'
       'amount amount btn'
-      'title toggles btn';
-    gap: 4px 6px;
-    padding: 4px 5px 4px 12px;
+      'chips chips btn';
+    gap: 5px 8px;
+    padding: 7px 8px 7px 14px;
   }
   .bet-panel::before {
     left: 4px;
@@ -2049,23 +2076,27 @@ kbd {
   }
   .bet-panel__title {
     grid-area: title;
+    min-width: 0;
   }
-  .bet-panel__icon,
-  .toggle svg,
-  .chips {
+  .toggle svg {
     display: none;
   }
   .bet-panel__name {
     flex-direction: row;
     align-items: center;
-    gap: 5px;
+    gap: 7px;
+    min-width: 0;
   }
   .bet-panel__label {
-    font-size: 11px;
+    flex: none;
+    font-size: 12px;
   }
   .bet-panel__state {
-    font-size: 0;
-    gap: 0;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 11px;
   }
   .bet-panel__toggles {
     grid-area: toggles;
@@ -2073,51 +2104,41 @@ kbd {
     justify-content: flex-end;
   }
   .toggle {
-    height: 20px;
-    padding: 0 6px 0 7px;
-    font-size: 10px;
+    height: 26px;
+    padding: 0 8px 0 9px;
+    font-size: 11px;
+    white-space: nowrap;
   }
   .amount {
     grid-area: amount;
-    height: 28px;
-    gap: 6px;
-    padding: 2px 2px 2px 7px;
-    border-radius: 8px;
+    height: 40px;
   }
-  .amount > svg {
-    width: 16px;
-    height: 16px;
-  }
-  .amount__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+  /* 16px stops iOS zooming the page when the field is focused */
   .amount__input {
-    height: 18px;
-    font-size: 15px;
-  }
-  .amount__steps {
-    border-radius: 6px;
+    height: 20px;
+    font-size: 16px;
   }
   .step {
-    width: 28px;
+    width: 36px;
+    font-size: 13px;
+  }
+  .chips {
+    grid-area: chips;
+    padding: 3px 4px;
   }
   .bet-panel__body .big-btn {
     grid-area: btn;
     min-height: 0;
-    padding: 3px 6px 5px;
-    border-radius: 9px;
+    gap: 5px;
+    padding: 6px 6px 9px;
   }
   .bet-panel__body .big-btn__label {
-    font-size: 13px;
+    font-size: 15px;
+    text-align: center;
   }
   .bet-panel__body .big-btn__sub {
-    padding: 0 5px;
-    font-size: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
     line-height: 1.25;
   }
   .bet-panel__body .big-btn__key {
@@ -2126,5 +2147,35 @@ kbd {
   .bet-panel .cashout-row,
   .bet-panel .auto-row {
     grid-column: 1 / -1;
+  }
+}
+
+/* the narrowest phones: room for the whole stake, and all four chips and Max on one line */
+@media (max-width: 350px) {
+  .bet-panel {
+    grid-template-columns: minmax(0, 1fr) auto minmax(104px, 35%);
+  }
+  .amount > svg {
+    display: none;
+  }
+  .step {
+    width: 30px;
+  }
+  .chips {
+    gap: 2px;
+    padding: 3px 2px;
+  }
+  .chip,
+  .chip svg {
+    width: 25px;
+    height: 25px;
+  }
+  .chip-max {
+    padding: 0 6px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .toggle {
+    padding: 0 6px 0 7px;
   }
 }

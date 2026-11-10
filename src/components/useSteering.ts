@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { PERCH } from '../art/Scene';
-import { birdPosition } from '../game/engine';
+import { birdPosition, trackRate } from '../game/engine';
 import type { GameState } from '../game/types';
 
 /**
@@ -12,11 +12,13 @@ import type { GameState } from '../game/types';
  */
 
 /** Where Azul may be steered, in scene units (viewBox 0 0 1000 560). */
-export const STEER_BOX = { minX: 300, maxX: 950, minY: 60, maxY: 440 };
+export const STEER_BOX = { minX: 40, maxX: 950, minY: 60, maxY: 440 };
+/** Left of maxX, Azul has to stay above maxY, so it can't fly through Rato and the cage. */
+const OVER_RATO = { maxX: 320, maxY: 250 };
 const KEY_SPEED = 340; // scene units per second
 
 const clampX = (v: number) => Math.max(STEER_BOX.minX, Math.min(STEER_BOX.maxX, v));
-const clampY = (v: number) => Math.max(STEER_BOX.minY, Math.min(STEER_BOX.maxY, v));
+const clampY = (v: number, x: number, top: number) => Math.max(top, Math.min(x < OVER_RATO.maxX ? OVER_RATO.maxY : STEER_BOX.maxY, v));
 
 const KEY_MAP: Record<string, 'L' | 'R' | 'U' | 'D'> = {
   ArrowLeft: 'L',
@@ -56,9 +58,19 @@ interface SteerState {
   path: PathSample[];
   crash: { x: number; y: number } | null;
   used: boolean;
+  /** Where the poacher's sight is: it chases Azul rather than sitting on it. */
+  aimX: number;
+  aimY: number;
+  hunt: number;
 }
 
-export function useSteering(s: GameState, enabled = true) {
+/**
+ * `aimFrom` is where the sight waits between rounds (the muzzle). With `calm` (reduced motion) the
+ * sight tracks Azul directly instead of also sweeping around it. `cropTop` is how much of the sky a
+ * wide stage cuts off, so Azul stays in view.
+ */
+export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; y: number } = PERCH, calm = false, cropTop = 0) {
+  const top = Math.max(STEER_BOX.minY, cropTop + 60);
   const svgRef = useRef<SVGSVGElement>(null);
   const ref = useRef<SteerState>({
     x: PERCH.x,
@@ -77,6 +89,9 @@ export function useSteering(s: GameState, enabled = true) {
     path: [],
     crash: null,
     used: false,
+    aimX: aimFrom.x,
+    aimY: aimFrom.y,
+    hunt: 0,
   });
   const st = ref.current;
   const { phase: ph, now } = s;
@@ -106,6 +121,9 @@ export function useSteering(s: GameState, enabled = true) {
     st.pointer = false;
     st.path = [];
     st.crash = null;
+    st.aimX = aimFrom.x;
+    st.aimY = aimFrom.y;
+    st.hunt = 0;
   } else if (ph === 'flying') {
     const t = (now - s.t0) / 1000;
     const auto = birdPosition(s.mult, t);
@@ -119,12 +137,12 @@ export function useSteering(s: GameState, enabled = true) {
       const kx = (st.keys.has('R') ? 1 : 0) - (st.keys.has('L') ? 1 : 0);
       const ky = (st.keys.has('D') ? 1 : 0) - (st.keys.has('U') ? 1 : 0);
       st.tx = clampX(st.tx + kx * KEY_SPEED * dt);
-      st.ty = clampY(st.ty + ky * KEY_SPEED * dt);
+      st.ty = clampY(st.ty + ky * KEY_SPEED * dt, st.tx, top);
     } else if (!st.pointer) {
       st.active = false;
     }
     const gx = st.active ? st.tx : auto.x;
-    const gy = st.active ? st.ty : auto.y;
+    const gy = st.active ? st.ty : Math.max(top, auto.y);
     const k = 1 - Math.exp(-dt * (st.active ? 7 : 2.4));
     const nx = st.x + (gx - st.x) * k;
     const ny = st.y + (gy - st.y) * k;
@@ -138,6 +156,17 @@ export function useSteering(s: GameState, enabled = true) {
     st.y = ny;
     const lastSample = st.path[st.path.length - 1];
     if (!lastSample || t - lastSample.t > 0.08) st.path = [...st.path.slice(-60), { x: nx, y: ny, t }];
+
+    // The sight chases Azul and closes faster as the multiplier climbs. It also sweeps around
+    // Azul, widely at first and then tighter and quicker. None of this affects when the net fires.
+    const closing = Math.min(1, Math.log(Math.max(1, s.mult)) / Math.log(8));
+    st.hunt += dt * (1.6 + 3.2 * closing);
+    const sweep = calm ? 0 : 12 + 52 * (1 - closing);
+    const huntX = nx + Math.cos(st.hunt) * sweep;
+    const huntY = ny + Math.sin(st.hunt * 1.37 + 0.6) * sweep * 0.7;
+    const follow = 1 - Math.exp(-trackRate(s.mult) * dt);
+    st.aimX += (huntX - st.aimX) * follow;
+    st.aimY += (huntY - st.aimY) * follow;
   } else if (!st.crash) {
     // Freeze the catch where Azul actually was on screen.
     st.crash = st.path.length ? { x: st.x, y: st.y } : { x: s.crashX, y: s.crashY };
@@ -153,7 +182,8 @@ export function useSteering(s: GameState, enabled = true) {
     pt.x = clientX;
     pt.y = clientY;
     const p = pt.matrixTransform(ctm.inverse());
-    return { x: clampX(p.x), y: clampY(p.y) };
+    const x = clampX(p.x);
+    return { x, y: clampY(p.y, x, top) };
   };
 
   const handlers = {
@@ -209,6 +239,8 @@ export function useSteering(s: GameState, enabled = true) {
     tilt: Math.max(-25, Math.min(25, st.vy * 0.06)),
     path: st.path,
     crash: st.crash,
+    aimX: st.aimX,
+    aimY: st.aimY,
     dragging: st.pointer,
     steering: st.active,
     used: st.used,

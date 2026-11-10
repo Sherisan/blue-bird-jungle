@@ -141,6 +141,47 @@ export class SoundFx {
     src.stop(t + 0.4);
   }
 
+  /** The rest of the catch, timed to the stage: the winch ratchet, the cage door's clang, the padlock's click. */
+  capture(beats: { wrap: number; reel: number; shut: number; lock: number }) {
+    const ctx = this.ctx;
+    if (!ctx || !this.noise) return;
+    const t0 = ctx.currentTime;
+
+    const tick = (at: number, gain: number, freq: number, q: number, len: number) => {
+      const src = ctx.createBufferSource();
+      src.buffer = this.noise;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = freq;
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(gain, at);
+      g.gain.exponentialRampToValueAtTime(0.001, at + len);
+      src.connect(bp).connect(g).connect(this.out);
+      src.start(at);
+      src.stop(at + len + 0.02);
+    };
+    const ring = (at: number, freq: number, gain: number, len: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(gain, at);
+      g.gain.exponentialRampToValueAtTime(0.001, at + len);
+      o.connect(g).connect(this.out);
+      o.start(at);
+      o.stop(at + len + 0.02);
+    };
+
+    for (let at = beats.wrap; at < beats.reel; at += 0.075) tick(t0 + at, 0.16, 2400, 6, 0.03);
+    tick(t0 + beats.shut, 0.6, 700, 1.2, 0.2);
+    ring(t0 + beats.shut, 310, 0.16, 0.5);
+    ring(t0 + beats.shut, 467, 0.1, 0.42);
+    tick(t0 + beats.lock - 0.06, 0.32, 3400, 5, 0.04);
+    tick(t0 + beats.lock, 0.46, 2200, 4, 0.06);
+    ring(t0 + beats.lock, 1244, 0.09, 0.3);
+  }
+
   /** Cash-out: two bright notes. */
   chime() {
     const ctx = this.ctx;

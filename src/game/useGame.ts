@@ -1,5 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { GameEngine } from './GameEngine';
+import { CAPTURE } from './engine';
 import { LocalDemoProvider } from './fairness';
 import { SoundFx } from './sound';
 
@@ -17,7 +18,11 @@ export function useEngine(): GameHandle {
     const on = () => engine.getSnapshot().soundOn;
     engine.events = {
       launch: () => on() && sfx.squawk(),
-      crash: () => on() && sfx.netShot(),
+      crash: () => {
+        if (!on()) return;
+        sfx.netShot();
+        sfx.capture(CAPTURE);
+      },
       cashout: () => on() && sfx.chime(),
     };
     ref.current = { engine, sfx };

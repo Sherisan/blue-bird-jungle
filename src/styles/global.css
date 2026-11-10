@@ -490,3 +490,32 @@ p {
     opacity: 0.25;
   }
 }
+
+@keyframes coat-sway {
+  0%,
+  100% {
+    transform: skewX(-1.2deg);
+  }
+  50% {
+    transform: skewX(1.5deg);
+  }
+}
+
+/* a shooting star: streaks down to the left, then waits out the rest of the cycle */
+@keyframes meteor {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  7% {
+    transform: translate(-230px, 92px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-230px, 92px);
+    opacity: 0;
+  }
+}

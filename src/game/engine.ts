@@ -1,7 +1,10 @@
 /** Pure game maths shared by the engine and the stage. */
 
 export const WAIT_MS = 5000;
-export const HOLD_MS = 3400;
+/** How long a finished round stays on screen: long enough for the catch to play out. */
+export const HOLD_MS = 4700;
+/** The beats of the catch, in seconds after the round ends: net lands, net closes, reeled to the cage, on the swing, door shut, padlocked. */
+export const CAPTURE = { net: 0.28, wrap: 0.62, reel: 1.9, inside: 2.25, shut: 2.6, lock: 2.95 };
 export const GROWTH = 0.11;
 export const HOUSE_EDGE = 0.01;
 export const MAX_MULT = 10000;
@@ -34,22 +37,42 @@ export function birdPosition(m: number, t: number): { x: number; y: number } {
   return { x: 520 + p * 300, y: 400 - p * 270 + Math.sin(t * 4.2) * 6 * Math.min(1, p * 4) };
 }
 
-/** The poacher is drawn smaller than his art: scaled around his feet and moved here. */
-export const POACHER_SCALE = 0.8;
+/**
+ * The poacher is drawn at a different size from his art: scaled around his feet and moved here.
+ * Phones show the whole scene at once, so he is drawn larger there than on wide screens.
+ */
+export const POACHER_SCALE = 0.9;
+export const POACHER_SCALE_WIDE = 0.52;
 export const POACHER_ORIGIN = { x: 196, y: 548 };
-export const POACHER_POS = { x: 214, y: 548 };
-export const POACHER_TRANSFORM = `translate(${POACHER_POS.x} ${POACHER_POS.y}) scale(${POACHER_SCALE}) translate(${-POACHER_ORIGIN.x} ${-POACHER_ORIGIN.y})`;
+export const POACHER_POS = { x: 106, y: 548 };
+
+export function poacherTransform(k: number): string {
+  return `translate(${POACHER_POS.x} ${POACHER_POS.y}) scale(${k}) translate(${-POACHER_ORIGIN.x} ${-POACHER_ORIGIN.y})`;
+}
 
 /** Gun pivot in world coordinates. The art pivots at (205, 372) in its own space (art/Poacher.tsx). */
-export const GUN_PIVOT = {
-  x: POACHER_POS.x + (205 - POACHER_ORIGIN.x) * POACHER_SCALE,
-  y: POACHER_POS.y + (372 - POACHER_ORIGIN.y) * POACHER_SCALE,
-};
+export function gunPivot(k: number): { x: number; y: number } {
+  return {
+    x: POACHER_POS.x + (205 - POACHER_ORIGIN.x) * k,
+    y: POACHER_POS.y + (372 - POACHER_ORIGIN.y) * k,
+  };
+}
 
 /** Gun angle in degrees for a target point, clamped to a natural range. */
-export function aimAngle(x: number, y: number): number {
-  const a = (Math.atan2(y - GUN_PIVOT.y, x - GUN_PIVOT.x) * 180) / Math.PI;
-  return Math.max(-40, Math.min(-4, a));
+export function aimAngle(x: number, y: number, k: number, min = -58, max = -4): number {
+  const pivot = gunPivot(k);
+  const a = (Math.atan2(y - pivot.y, x - pivot.x) * 180) / Math.PI;
+  return Math.max(min, Math.min(max, a));
+}
+
+/** How quickly the sight closes on Azul, per second. It rises with the multiplier, so the chase gets faster. */
+export function trackRate(m: number): number {
+  return 1.3 + 2.6 * Math.min(1, Math.log(m) / Math.log(20)) + Math.max(0, Math.log(m / 20)) * 1.2;
+}
+
+/** The sight's inner ring tightens as the multiplier climbs. */
+export function sightRadius(m: number): number {
+  return 44 - Math.min(0.42, (Math.log(m) / Math.log(60)) * 0.42) * 24;
 }
 
 export function winTier(m: number): string | null {

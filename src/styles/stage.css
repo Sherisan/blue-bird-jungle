@@ -93,6 +93,50 @@
   animation: twinkle 3.2s ease-in-out infinite;
 }
 
+.meteor {
+  opacity: 0;
+  animation: meteor 12s ease-out infinite;
+}
+
+/* Rato's idle life and the net cannon's charge */
+.rato-breathe {
+  transform-box: view-box;
+  transform-origin: 204px 432px;
+  animation: breathe 3.6s ease-in-out infinite;
+}
+
+.rato-coat {
+  transform-box: view-box;
+  transform-origin: 200px 430px;
+  animation: coat-sway 4.8s ease-in-out infinite;
+}
+
+.rato-charm {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: sway 3.2s ease-in-out infinite;
+}
+
+.rato-blink {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: blink 5.4s ease-in-out infinite;
+}
+
+.rato-smoke {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: smoke 3.3s ease-out infinite;
+}
+
+.rato-ember {
+  animation: ember 1.8s ease-in-out infinite;
+}
+
+.gun-glow {
+  animation: glow 1.8s ease-in-out infinite;
+}
+
 .shimmer {
   animation: shimmer 2.6s ease-in-out infinite;
 }
@@ -217,9 +261,10 @@
   animation: mote 7s ease-in-out infinite;
 }
 
+/* each wing is drawn with its shoulder at the local origin, so it beats from the shoulder */
 .bird .wing {
-  transform-box: fill-box;
-  transform-origin: 40% 95%;
+  transform-box: view-box;
+  transform-origin: 0px 0px;
 }
 
 .bird .wing-near {
@@ -1073,5 +1118,163 @@ button.stage__round:hover {
     margin: 0 auto;
     max-width: min(460px, calc(100% - 600px));
     background: linear-gradient(180deg, rgba(10, 26, 46, 0.85), rgba(3, 10, 20, 0.85));
+  }
+}
+
+/* ---- read-outs and the altitude bar, at the same sizes and places as Duck Season ---- */
+
+.stage__center {
+  top: 14px;
+  gap: 5px;
+}
+
+.stage__center::before {
+  top: -14px;
+  width: min(460px, 78%);
+  height: 136px;
+}
+
+.stage__kicker {
+  padding: 3px 10px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.stage__mult {
+  font-size: clamp(34px, 5vw, 66px);
+  letter-spacing: -0.01em;
+}
+
+.countdown {
+  width: 150px;
+  height: 4px;
+}
+
+.stage__sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* round results stay in the top corner, clear of the centre read-out */
+.stage__history {
+  flex: 0 1 calc(50% - 170px);
+}
+
+.stage__round {
+  margin-left: auto;
+}
+
+.gauge {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+.gauge__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gauge__track {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(3, 10, 18, 0.7);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.gauge__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-pill);
+  background: var(--game);
+  box-shadow: 0 0 12px var(--game);
+}
+
+.gauge__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.gauge__scale {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stakebar {
+  bottom: 38px;
+}
+
+.stage__toast {
+  bottom: 62px;
+}
+
+@media (max-width: 720px) {
+  .stage__center {
+    top: 8px;
+    gap: 3px;
+  }
+  .stage__mult {
+    font-size: 32px;
+  }
+  .stage__sub {
+    font-size: 12px;
+  }
+  .gauge {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+  }
+  /* the sky band has room for the round results, below the read-out */
+  .stage__top {
+    top: 118px;
+  }
+  .stage__history {
+    flex: 1;
+  }
+}
+
+/* keep the stake bar and the steering hint clear of the altitude bar and the centre read-out */
+.hud-bl {
+  bottom: 36px;
+}
+
+@media (min-width: 761px) {
+  .steer-hint {
+    bottom: 84px;
+    max-width: min(460px, calc(100% - 28px));
+  }
+}
+
+@media (max-width: 760px) {
+  .steer-hint {
+    top: 156px;
+  }
+}
+
+/* phones: the stake bar and steering hint sit in the band of sky, clear of Rato and the cage */
+@media (max-width: 720px) {
+  .hud-bl {
+    top: 158px;
+    bottom: auto;
+    max-width: calc(100% - 28px);
+  }
+  .steer-hint {
+    top: 204px;
   }
 }

@@ -28,20 +28,23 @@ All scene art shares one coordinate space: `viewBox 0 0 1000 560`.
 | --- | --- | --- |
 | `perch` | Betting | Wing folded, head tilts, blinks every few seconds, reflected in the lagoon |
 | `fly` | Flight | Fanned wings with a full wingbeat, beak open, aura and sparkle trail; you can steer it |
-| `caught` | Crash | Wrapped in the net, X eyes, spinning stars |
+| `caught` | Crash | Wrapped in the net, X eyes, tongue out, spinning stars |
+| `caged` | Locked up | On the swing behind the bars, wing folded, one sad tear |
 
-Size on stage: `BIRD_SCALE` in `src/components/Stage.tsx`. Steering: `src/components/useSteering.ts` (`STEER_BOX` sets where Azul may fly).
+Size on stage: 90% on wide screens, 110% on phones (`dk` in `src/components/Stage.tsx`). Steering: `src/components/useSteering.ts` (`STEER_BOX` sets where Azul may fly).
 
-**Rato the poacher** (`src/art/Poacher.tsx`). Bush hat with a leopard band, aviator sunglasses resting on the brim, curled moustache, gold tooth, stubble. Olive vest, binoculars, a bandolier of red net cartridges, a net launcher with an air tank, and a bamboo cage.
+**Rato the poacher** (`src/art/Poacher.tsx`). Wide bush hat with a leopard band and a stolen blue feather, aviator sunglasses on the crown, handlebar moustache, scar, gold tooth and earring. Long leather coat with a red lining and fur collar, binoculars, a bandolier of red net cartridges, trophy feathers on his belt, and a net cannon with an air tank, charged coils and a winch.
 
 | Mood | When | Speech bubble |
 | --- | --- | --- |
-| `idle` | Betting | (toothpick) |
-| `aim` | Flight | |
+| `idle` | Betting | (cigar) |
+| `aim` | Flight, and while reeling a catch in | "Gotcha!" once the net lands |
 | `annoyed` | Right after you cash out | "Come back here!" |
-| `cheer` | After the catch | "Gotcha!" |
+| `cheer` | Once the cage door shuts | "Locked up!" |
 
-Size and position on stage: `POACHER_SCALE`, `POACHER_POS` in `src/game/engine.ts`.
+Size and position on stage: `POACHER_SCALE_WIDE`, `POACHER_SCALE`, `POACHER_POS` in `src/game/engine.ts`.
+
+**The cage** (`src/art/Cage.tsx`). A brass trophy cage on a dark wooden plinth with a name plate, a swing inside, a door that swings shut and a padlock that snaps. It draws in two parts so Azul can sit between them. Where it stands: `CAGE_WIDE` and `CAGE_PHONE` in `src/components/Stage.tsx`.
 
 ## Colour
 

@@ -4,7 +4,7 @@ A crash-style betting game built in **React 18 + TypeScript + Vite**, reskinned 
 
 **Azul**, a cobalt-blue macaw, takes off from a branch over a jungle lagoon. While Azul flies, the multiplier climbs. **Rato the poacher** tracks the bird with a net launcher; cash out before he fires, because when his net lands the round is over.
 
-Everything is drawn as SVG in React components: the macaw, the poacher and his bamboo cage, the waterfall, the giant Amazon water lilies, glowing flowers and mushrooms, a toucan, hummingbirds, blue morpho butterflies and a passing parrot flock. There are no image files to manage, and every piece scales cleanly. Sounds (a macaw squawk, the net launcher, the cash-out chime) are synthesised with Web Audio.
+Everything is drawn as SVG in React components: the macaw, the poacher and his brass trophy cage, the waterfall, the giant Amazon water lilies, glowing flowers and mushrooms, a toucan, hummingbirds, blue morpho butterflies and a passing parrot flock. There are no image files to manage, and every piece scales cleanly. Sounds (a macaw squawk, the net launcher, the cash-out chime) are synthesised with Web Audio.
 
 > Demo build: it plays with **demo credits only** and computes round results in the browser. Read "Going live" before connecting real money.
 
@@ -61,9 +61,9 @@ npm run dev          # opens http://localhost:5173
 - **Multiplier colour tiers**: white below 2×, glowing cyan from 2×, gold from 5×, and a shimmering rainbow from 10×. It bumps every time it passes a milestone (2×, 3×, 5×, 10×, 25×, 50×, 100× and up).
 - **"CAUGHT!" stamp** that slams in over the net at the crash; win bursts throw blue and gold feathers along with the coins.
 - **Scene depth**: a hazy far tree line with palms and kapok trees, moonbeams, a bromeliad and hanging moss on Azul's tree, soft-focus foreground leaves, drifting pollen.
-- **Rato is drawn at 80%** of his art size (`POACHER_SCALE` in `engine.ts`), now with aviator sunglasses on his hat, binoculars, an air tank and pressure gauge on the net gun, gloved hands, a tagged padlocked cage and muddy boots.
-- **Azul, redrawn and smaller** (drawn at 90%, `BIRD_SCALE` in `Stage.tsx`): tapered feathers throughout, a fanned wing with spread primaries, a graduated tail, swept-back crown feathers, a glossy eye in a gold ring, and a beak that opens in flight. A glowing aura and sparkle trail in flight, and a reflection in the lagoon.
-- **Steer Azul**: during a flight, drag Azul (mouse or touch) or use the arrow keys / WASD while the stage has focus. Azul eases toward your pointer, turns to face the way it flies and tilts into dives; let go and it drifts back to its own path. The poacher's gun tracks Azul and the net flies to wherever Azul is when the round ends. Steering is cosmetic: the catch point comes from the round's seeds before take-off, so it can't change the result or the 99% RTP. The code is in `components/useSteering.ts` (`STEER_BOX` sets where Azul may fly).
+- **Rato** is drawn at 52% of his art size on wide screens and 90% on phones (`POACHER_SCALE_WIDE` and `POACHER_SCALE` in `engine.ts`), in a long leather coat with aviator sunglasses on his hat, binoculars, gloved hands and muddy boots. His net cannon has an air tank, pressure gauge and the winch that reels a catch in.
+- **Azul, redrawn** (drawn at 90% on wide screens and 110% on phones, in `Stage.tsx`): tapered feathers throughout, a fanned wing with spread primaries, a graduated tail, swept-back crown feathers, a glossy eye in a gold ring, and a beak that opens in flight. A glowing aura and sparkle trail in flight, and a reflection in the lagoon.
+- **Steer Azul**: during a flight, drag Azul (mouse or touch) or use the arrow keys / WASD while the stage has focus. Azul eases toward your pointer, turns to face the way it flies and tilts into dives; let go and it drifts back to its own path. The poacher's crosshair chases Azul, closing faster as the multiplier climbs (`trackRate` in `engine.ts`), his gun follows the crosshair, and the net flies to wherever Azul is when the round ends. Steering and the chase are cosmetic: the catch point comes from the round's seeds before take-off, so it can't change the result or the 99% RTP. The code is in `components/useSteering.ts` (`STEER_BOX` sets where Azul may fly).
 
 ## Layout
 
@@ -82,10 +82,10 @@ npm run dev          # opens http://localhost:5173
 
 | Moment | Azul | Rato |
 | --- | --- | --- |
-| Betting (5 s) | Perched on the branch, blinking and tilting its head, reflected in the lagoon | Relaxed, toothpick in his mouth |
-| Flight | Flaps up over the waterfall with a glowing aura and a sparkle trail; a red crosshair follows; clouds speed up as the multiplier climbs | Squints and tracks the bird with the net launcher |
+| Betting (5 s) | Perched on the branch, blinking and tilting its head, reflected in the lagoon | Relaxed, cigar smoking |
+| Flight | Flaps up over the waterfall with a glowing aura and a sparkle trail; a red crosshair chases it, faster and faster; clouds speed up as the multiplier climbs | Squints and swings the net launcher after the crosshair |
 | You cash out | Keeps flying | Grits his teeth: **"Come back here!"** |
-| Crash | The net shell flies, opens and wraps the bird; blue and gold feathers burst, the screen shakes, the bird drops | Grins, gold tooth showing: **"Gotcha!"** |
+| Crash | The net shell flies on its line, opens and wraps the bird; feathers burst and the screen shakes; Azul is winched in, put on the swing in the cage, the door slams and the padlock snaps (`CAPTURE` in `engine.ts` sets the beats) | Cranks the winch: **"Gotcha!"**, then punches the air, gold tooth showing: **"Locked up!"** |
 
 ## Project structure
 
@@ -97,13 +97,15 @@ src/
     engine.ts              Maths: multiplier curve, crash formula, bird flight path, aim
     fairness.ts            RoundProvider interface, SHA-256 seeds, verifyRound
     useGame.ts             React hooks (useSyncExternalStore) + sound wiring
-    sound.ts               Web Audio: squawk, netShot, chime
+    capture.ts             The catch as a function of time: net, reel, cage door, padlock
+    sound.ts               Web Audio: squawk, netShot, capture, chime
     settings.ts            Player settings, saved in this browser
     format.ts, types.ts
   art/
-    Bird.tsx               Azul: <Bird state="perch|fly|caught"/>, <Net/>, <NetShell/>, <BirdArt/>
-    Poacher.tsx            Rato: <Poacher mood aim recoil puff bubble/>, <PoacherArt/>, MUZZLE_OFFSET
-    Scene.tsx              Jungle layers: SceneSky, SceneFauna, SceneJungle, SceneBank, SceneForeground + plant kit
+    Bird.tsx               Azul: <Bird state="perch|fly|caught|caged"/>, <Net/>, <NetShell/>, <BirdArt/>
+    Poacher.tsx            Rato: <Poacher mood aim recoil puff bubble reel/>, <PoacherArt/>, MUZZLE_OFFSET
+    Cage.tsx               The trophy cage: <Cage part door lock swing/>
+    Scene.tsx              Jungle layers: SceneSky, SceneFauna, SceneJungle, SceneBank, SceneNearShore, SceneForeground + plant kit
     Fauna.tsx              Toucan, Hummingbird, Morpho, ParrotFlock
     Clouds.tsx             Scrolling moonlit clouds
     KeyArt.tsx             Full-scene still for lobby cards and banners
@@ -120,7 +122,7 @@ src/
     HowToPlay.tsx          Help window: How to play, Rules, Fair play, Shortcuts
     icons.tsx
   styles/
-    tokens.css             Colours, type, radii, layout sizes (--rail-w, --stage-h)
+    tokens.css             Colours, type, radii, shadows
     global.css             Reset, utilities, all keyframes
     app.css                Layout, top bar, bet panels, drawer, modal
     stage.css              Stage overlays and SVG animation hooks
@@ -134,10 +136,10 @@ scripts/export-assets.tsx  Builds public/assets from the React art
 ## Customising
 
 - **Colours**: `src/styles/tokens.css`. `--game` is the cyan accent and the surfaces are deep jungle blue. Gold stays the only action colour; green only means money won and red only means money lost.
-- **Layout sizes**: `--rail-w` (right-hand column width) and `--stage-h` (stage height) in `tokens.css`.
+- **Layout**: the same layout as Duck Season. In `app.css`, `.layout__main` (the stage, `flex: 999 1 640px`) and `.layout__side` (the bets column, `flex: 1 1 300px`) sit side by side and the column drops below the stage when the window is too narrow. The stage keeps the scene's 1000 × 560 shape (`.stage` in `stage.css`); on phones (560px and below) it runs edge to edge and fits the whole scene with sky above, and each bet panel becomes one slim row.
 - **Timings and maths**: `src/game/engine.ts` (`WAIT_MS`, `HOLD_MS`, `GROWTH`, `HOUSE_EDGE`, `MAX_MULT`, `START_BALANCE`).
 - **Where the bird perches and flies**: `PERCH` in `art/Scene.tsx` and `birdPosition()` in `game/engine.ts` (keep the start point equal to `PERCH`).
-- **The poacher's size and spot**: `POACHER_SCALE`, `POACHER_POS` and `POACHER_ORIGIN` in `engine.ts`. `GUN_PIVOT` is derived from them, so the aim and the net shot follow automatically.
+- **The poacher's size and spot**: `POACHER_SCALE_WIDE`, `POACHER_SCALE`, `POACHER_POS` and `POACHER_ORIGIN` in `engine.ts`. `gunPivot()` is derived from them, so the aim and the net shot follow automatically.
 - **The gun**: if you redraw the net launcher, keep `MUZZLE_OFFSET` in `art/Poacher.tsx` pointing at the muzzle and its pivot at `(205, 372)` in the art; the net shell launches from there.
 - **SVG animation rule**: a CSS animation that sets `transform` overrides an SVG `transform` attribute. Put the position on an outer `<g transform>` and the animation class on an inner `<g>` (every animated piece in `Scene.tsx` and `Fauna.tsx` does this).
 - After changing art, run `npm run export:assets`.
