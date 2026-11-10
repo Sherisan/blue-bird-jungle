@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Feather } from '../art/Tokens';
 import type { GameEngine } from '../game/GameEngine';
-import { verifyRound } from '../game/fairness';
 import { fmt, fmtSigned, fmtX } from '../game/format';
 import type { BetRow, GameState, RoundsOption, Stats } from '../game/types';
 import { AutoIcon, ShieldIcon } from './icons';
@@ -193,20 +192,8 @@ function RoundStats({ history, stats }: { history: number[]; stats: Stats }) {
 }
 
 export function FairnessPanel({ s }: { s: GameState }) {
-  const [check, setCheck] = useState<{ nonce: number; text: string; ok: boolean } | null>(null);
   const rev = s.revealed;
-
-  const verify = async () => {
-    if (!rev) return;
-    try {
-      const crash = await verifyRound(rev.serverSeed, s.clientSeed, rev.nonce);
-      const ok = crash === rev.crash;
-      setCheck({ nonce: rev.nonce, ok, text: ok ? `Verified: seeds give ${fmtX(crash)}` : `Mismatch: seeds give ${fmtX(crash)}` });
-    } catch {
-      setCheck({ nonce: rev.nonce, ok: false, text: 'Verification needs https or localhost.' });
-    }
-  };
-
+  const prev = s.previousSeed;
   return (
     <section className="panel" aria-label="Provably fair">
       <div className="panel__head">
@@ -215,32 +202,23 @@ export function FairnessPanel({ s }: { s: GameState }) {
         <span className="panel__meta">Round #{s.nonce}</span>
       </div>
       <div className="stack-4">
-        <span className="label">Server seed hash</span>
-        <code className="seed">{s.nextHash || 'Generating…'}</code>
-      </div>
-      <div className="stack-4">
-        <span className="label">Client seed</span>
-        <code className="seed">{s.clientSeed}</code>
+        <span className="label">Server seed hash · nonce {s.nonce || '…'}</span>
+        <code className="seed">{s.nextHash || 'Connecting…'}</code>
       </div>
       {rev && (
         <div className="stack-4">
-          <span className="label">
-            Revealed · #{rev.nonce} · {fmtX(rev.crash)}
-          </span>
-          <code className="seed">{rev.serverSeed}</code>
-          <div className="verify">
-            <button className="btn-ghost" onClick={verify}>
-              Verify round #{rev.nonce}
-            </button>
-            {check && check.nonce === rev.nonce && (
-              <span className={`small ${check.ok ? 'text-win' : 'text-loss'}`} role="status">
-                {check.text}
-              </span>
-            )}
-          </div>
+          <span className="label">Last round · #{rev.nonce}</span>
+          <code className="seed">Crash point {fmtX(rev.crash)}</code>
         </div>
       )}
-      <p className="muted small">Result = SHA-256(server seed : client seed : nonce). Crash point = max(1, 0.99 ÷ (1 − r)). 1% house edge.</p>
+      {prev?.serverSeed && (
+        <div className="stack-4">
+          <span className="label">Revealed server seed</span>
+          <code className="seed">{prev.serverSeed}</code>
+          {prev.hash && <code className="seed">{prev.hash}</code>}
+        </div>
+      )}
+      <p className="muted small">The game server draws every crash point before betting opens. 1% house edge, up to {fmtX(10000)}.</p>
     </section>
   );
 }

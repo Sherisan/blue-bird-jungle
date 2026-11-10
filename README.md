@@ -6,7 +6,7 @@ A crash-style betting game built in **React 18 + TypeScript + Vite**, reskinned 
 
 Everything is drawn as SVG in React components: the macaw, the poacher and his brass trophy cage, the waterfall, the giant Amazon water lilies, glowing flowers and mushrooms, a toucan, hummingbirds, blue morpho butterflies and a passing parrot flock. There are no image files to manage, and every piece scales cleanly. Sounds (a macaw squawk, the net launcher, the cash-out chime) are synthesised with Web Audio.
 
-> Demo build: it plays with **demo credits only** and computes round results in the browser. Read "Going live" before connecting real money.
+> Rounds come from the **GameEngineAPI** (`./GameEngineAPI`, its own git repo). The server draws every crash point, takes the bets, pays cash-outs and keeps the balance. See "Game server" below.
 
 ## Play it right now
 
@@ -92,10 +92,11 @@ npm run dev          # opens http://localhost:5173
 ```
 src/
   main.tsx, App.tsx        Entry and page layout (stage + right-hand column + drawer)
+  api/
+    liveCrash.ts           SignalR client for the GameEngineAPI /livecrashhub
   game/
     GameEngine.ts          Game loop and player actions (framework-free)
     engine.ts              Maths: multiplier curve, crash formula, bird flight path, aim
-    fairness.ts            RoundProvider interface, SHA-256 seeds, verifyRound
     useGame.ts             React hooks (useSyncExternalStore) + sound wiring
     capture.ts             The catch as a function of time: net, reel, cage door, padlock
     sound.ts               Web Audio: squawk, netShot, capture, chime
@@ -137,7 +138,7 @@ scripts/export-assets.tsx  Builds public/assets from the React art
 
 - **Colours**: `src/styles/tokens.css`. `--game` is the cyan accent and the surfaces are deep jungle blue. Gold stays the only action colour; green only means money won and red only means money lost.
 - **Layout**: the same layout as Duck Season. In `app.css`, `.layout__main` (the stage, `flex: 999 1 640px`) and `.layout__side` (the bets column, `flex: 1 1 300px`) sit side by side and the column drops below the stage when the window is too narrow. The stage keeps the scene's 1000 × 560 shape (`.stage` in `stage.css`); on phones (560px and below) it runs edge to edge and fits the whole scene with sky above, and each bet panel becomes one slim row.
-- **Timings and maths**: `src/game/engine.ts` (`WAIT_MS`, `HOLD_MS`, `GROWTH`, `HOUSE_EDGE`, `MAX_MULT`, `START_BALANCE`).
+- **Timings and maths**: `src/game/engine.ts` (`WAIT_MS`, `HOLD_MS`, `GROWTH`, `HOUSE_EDGE`, `MAX_MULT`). The server's own timings are in `GameEngineAPI/appsettings.json` under `blue-bird-jungle`.
 - **Where the bird perches and flies**: `PERCH` in `art/Scene.tsx` and `birdPosition()` in `game/engine.ts` (keep the start point equal to `PERCH`).
 - **The poacher's size and spot**: `POACHER_SCALE_WIDE`, `POACHER_SCALE`, `POACHER_POS` and `POACHER_ORIGIN` in `engine.ts`. `gunPivot()` is derived from them, so the aim and the net shot follow automatically.
 - **The gun**: if you redraw the net launcher, keep `MUZZLE_OFFSET` in `art/Poacher.tsx` pointing at the muzzle and its pivot at `(205, 372)` in the art; the net shell launches from there.
@@ -146,22 +147,23 @@ scripts/export-assets.tsx  Builds public/assets from the React art
 
 ## Provably fair
 
-```
-r      = first 52 bits of SHA-256(serverSeed : clientSeed : nonce) / 2^52
-crash  = max(1, floor(0.99 / (1 − r) × 100) / 100)        // 1% house edge, capped at 10 000×
-```
+The GameEngineAPI draws each crash point before betting opens and shows the SHA-256 hash of its server seed and the round's nonce. When it replaces the seed, the old seed is revealed in the ☰ menu so past rounds can be checked. 1% house edge, capped at 10 000×.
 
-## Going live (real money)
+## Game server
 
-The demo decides crash points in the browser, which is fine for practice and unsafe for real stakes. Before production:
+The GameEngineAPI runs every round (the `blue-bird-jungle` LiveCrash game): it draws the crash point with its provably fair RNG (Target model, 1% house edge, up to 10 000×, growth 0.11), runs the clock, takes bets, pays cash-outs (by hand or automatic) and keeps the wallet. The game talks to it over SignalR at `/livecrashhub` (`src/api/liveCrash.ts`). Steering Azul is only for show.
 
-1. **Move round generation to your server.** Implement `RoundProvider` (in `fairness.ts`) against your API; the server keeps the crash point secret, publishes the seed hash before betting closes and reveals the seed after the crash. Swap it in at `useGame.ts`.
-2. **Make the server the authority for bets and cash-outs** (accept a cash-out only if it arrives before the crash time), ideally over a WebSocket feed.
-3. **Wallet**: replace the local `balance` with your wallet API.
-4. **Compliance**: real-money gambling needs a licence in your jurisdiction, age and identity checks, and responsible-gambling tools (deposit limits, self-exclusion, reality checks). Adjust the footer helpline for your market.
+Run it locally:
+
+1. Keep `GameEngineAPI/appsettings.Development.json` as `{"ConnectionStrings":{"DefaultConnection":""}}`, so it uses an in-memory wallet. Never commit passwords.
+2. `cd GameEngineAPI && DOTNET_ROLL_FORWARD=Major ASPNETCORE_ENVIRONMENT=Development dotnet run --no-launch-profile --urls http://localhost:5003`
+3. `npm run dev`. With no `?token=` in the address, the game fetches a demo token from the API's `/api/dev-token`.
+
+The game looks for the API at `http://localhost:5003`. Set `VITE_GAME_API_URL` to use another address.
+
+Real money also needs a licence in your jurisdiction, age and identity checks, and responsible-gambling tools (deposit limits, self-exclusion, reality checks). Adjust the footer helpline for your market.
 
 ## Notes
 
 - Sound starts off (browsers block audio until a click); the speaker button turns it on.
-- `crypto.subtle` needs `https://` or `localhost`; on plain http the demo falls back to `Math.random()` and says so in the fairness panel.
 - Animations respect `prefers-reduced-motion`.

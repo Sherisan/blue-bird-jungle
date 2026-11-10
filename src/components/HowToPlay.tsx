@@ -96,9 +96,9 @@ export function HowToPlay({ onClose, initialTab = 'play' }: { onClose: () => voi
               <li>Steering Azul is cosmetic and never changes the crash point or any payout.</li>
               <li>A malfunction voids all pays and plays.</li>
             </ul>
-            <h3>Demo</h3>
+            <h3>Balance</h3>
             <ul>
-              <li>This build plays with demo credits only. They have no cash value and can be refilled at any time.</li>
+              <li>The game server keeps your balance. Press <strong>Refresh</strong> to read it again.</li>
             </ul>
           </div>
         )}
@@ -106,12 +106,11 @@ export function HowToPlay({ onClose, initialTab = 'play' }: { onClose: () => voi
         {tab === 'fair' && (
           <div className="help-body rules" role="tabpanel">
             <h3>Provably fair</h3>
-            <p>Every crash point is decided before the round starts and can be checked afterwards.</p>
+            <p>Every crash point is drawn by the game server's provably fair RNG before betting opens.</p>
             <ol className="plain-steps">
-              <li>Before betting closes, the game shows the SHA-256 hash of a secret server seed.</li>
-              <li>The result is SHA-256(server seed : client seed : round number). Its first 52 bits give a number r between 0 and 1.</li>
-              <li>Crash point = max(1, 0.99 ÷ (1 − r)), rounded down to two decimals and capped at {MAX_MULT.toLocaleString('en-ZA')}×.</li>
-              <li>After the round the server seed is revealed. Hash it yourself to check it matches, or press <strong>Verify</strong> in the ☰ menu.</li>
+              <li>Before betting closes, the game shows the SHA-256 hash of the server seed and the round's nonce.</li>
+              <li>The server turns the seed and nonce into a crash point with a 1% house edge, capped at {MAX_MULT.toLocaleString('en-ZA')}×.</li>
+              <li>When the server replaces its seed, the old seed is revealed in the ☰ menu, so past rounds can be checked against the hash.</li>
             </ol>
             <p className="muted small">Because the result is fixed before take-off, nothing during the flight (including steering Azul) can change it.</p>
           </div>

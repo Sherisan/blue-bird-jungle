@@ -6,6 +6,12 @@ export interface Bet {
   target: number | null;
   cashedAt: number | null;
   auto: boolean;
+  /** Sent, waiting for the server to accept it. */
+  pending?: boolean;
+  /** A cash-out or cancel is on its way to the server. */
+  cashing?: boolean;
+  /** What the server paid. */
+  win?: number;
 }
 
 export interface SlotResult {
@@ -67,7 +73,8 @@ export interface FlightPoint {
 
 export interface RevealedRound {
   nonce: number;
-  serverSeed: string;
+  /** The server seed's hash for that round (the seed itself is revealed when it is replaced). */
+  serverSeedHash: string;
   crash: number;
 }
 
@@ -85,9 +92,13 @@ export interface GameState {
   history: number[];
   nonce: number;
   nextHash: string;
-  clientSeed: string;
+  /** The last server seed the game server has retired and revealed, if any. */
+  previousSeed: { serverSeed?: string; hash?: string } | null;
   revealed: RevealedRound | null;
   balance: number;
+  /** Connected to the game server. */
+  online: boolean;
+  currency: string;
   slots: Slot[];
   lim: AutoLimits;
   stats: Stats;

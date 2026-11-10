@@ -11,7 +11,8 @@ interface Props {
   onRules: () => void;
   onSettings: () => void;
   onToggleSound: () => void;
-  onRefill: () => void;
+  onRefresh: () => void;
+  currency: string;
 }
 
 function clock(ms: number) {
@@ -39,7 +40,7 @@ function useFullscreen() {
   return { on, toggle, supported };
 }
 
-export function Header({ balance, soundOn, sessionMs, onMenu, onRules, onSettings, onToggleSound, onRefill }: Props) {
+export function Header({ balance, soundOn, sessionMs, onMenu, onRules, onSettings, onToggleSound, onRefresh, currency }: Props) {
   const fs = useFullscreen();
   return (
     <header className="topbar">
@@ -75,13 +76,11 @@ export function Header({ balance, soundOn, sessionMs, onMenu, onRules, onSetting
           <Coin size={26} />
           <div className="balance__text">
             <span className="balance__value num">{fmt(balance)}</span>
-            <span className="balance__unit">demo credits</span>
+            <span className="balance__unit">{currency || 'balance'}</span>
           </div>
-          {balance < 100 && (
-            <button className="btn-ghost btn-ghost--sm" onClick={onRefill}>
-              Refill
-            </button>
-          )}
+          <button className="btn-ghost btn-ghost--sm" onClick={onRefresh} aria-label="Refresh balance">
+            Refresh
+          </button>
         </div>
         <button className="icon-btn" aria-label="Rules and help" title="Rules and help" onClick={onRules}>
           <BookIcon />

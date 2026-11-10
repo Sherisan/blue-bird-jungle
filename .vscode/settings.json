@@ -13,5 +13,8 @@
   },
   "files.exclude": {
     "**/.DS_Store": true
-  }
+  },
+  "git.scanRepositories": [
+    "GameEngineAPI"
+  ]
 }

@@ -107,7 +107,8 @@ export default function App() {
           onRules={() => setHelp(true)}
           onSettings={() => setSettingsOpen(true)}
           onToggleSound={toggleSound}
-          onRefill={() => engine.refill()}
+          onRefresh={() => void engine.refreshBalance()}
+          currency={s.currency}
         />
 
         <div className="layout">

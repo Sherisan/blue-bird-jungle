@@ -1,7 +1,7 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { GameEngine } from './GameEngine';
 import { CAPTURE } from './engine';
-import { LocalDemoProvider } from './fairness';
+import { LiveCrashClient } from '../api/liveCrash';
 import { SoundFx } from './sound';
 
 export interface GameHandle {
@@ -13,7 +13,7 @@ export interface GameHandle {
 export function useEngine(): GameHandle {
   const ref = useRef<GameHandle | null>(null);
   if (!ref.current) {
-    const engine = new GameEngine(new LocalDemoProvider());
+    const engine = new GameEngine(new LiveCrashClient('blue-bird-jungle'));
     const sfx = new SoundFx();
     const on = () => engine.getSnapshot().soundOn;
     engine.events = {
