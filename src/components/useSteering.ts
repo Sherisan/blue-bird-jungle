@@ -48,6 +48,8 @@ interface SteerState {
   ty: number;
   active: boolean;
   pointer: boolean;
+  /** A mouse is over the stage: Azul follows it without a click. */
+  hover: boolean;
   keys: Set<'L' | 'R' | 'U' | 'D'>;
   face: 1 | -1;
   vy: number;
@@ -79,6 +81,7 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
     ty: PERCH.y,
     active: false,
     pointer: false,
+    hover: false,
     keys: new Set(),
     face: 1,
     vy: 0,
@@ -105,6 +108,7 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
   if (!enabled) {
     st.keys.clear();
     st.pointer = false;
+    st.hover = false;
   }
   if (st.nonce !== s.nonce) {
     st.nonce = s.nonce;
@@ -119,6 +123,7 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
     st.vy = 0;
     st.active = false;
     st.pointer = false;
+    st.hover = false;
     st.path = [];
     st.crash = null;
     st.aimX = aimFrom.x;
@@ -138,7 +143,7 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
       const ky = (st.keys.has('D') ? 1 : 0) - (st.keys.has('U') ? 1 : 0);
       st.tx = clampX(st.tx + kx * KEY_SPEED * dt);
       st.ty = clampY(st.ty + ky * KEY_SPEED * dt, st.tx, top);
-    } else if (!st.pointer) {
+    } else if (!st.pointer && !st.hover) {
       st.active = false;
     }
     const gx = st.active ? st.tx : auto.x;
@@ -172,6 +177,7 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
     st.crash = st.path.length ? { x: st.x, y: st.y } : { x: s.crashX, y: s.crashY };
     st.active = false;
     st.pointer = false;
+    st.hover = false;
   }
 
   const toScene = (clientX: number, clientY: number) => {
@@ -202,7 +208,19 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
     },
     onPointerMove(e: PointerEvent<HTMLElement>) {
       const r = ref.current;
-      if (!r.pointer) return;
+      if (!r.pointer) {
+        // a mouse steers just by hovering; touch screens have no hover, so they still drag
+        if (e.pointerType !== 'mouse' || r.phase !== 'flying' || !r.enabled) return;
+        if ((e.target as Element).closest('button, a, input')) return;
+        const p = toScene(e.clientX, e.clientY);
+        if (!p) return;
+        r.hover = true;
+        r.active = true;
+        r.used = true;
+        r.tx = p.x;
+        r.ty = p.y;
+        return;
+      }
       const p = toScene(e.clientX, e.clientY);
       if (!p) return;
       r.tx = p.x;
@@ -213,6 +231,10 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
     },
     onPointerCancel() {
       ref.current.pointer = false;
+    },
+    onPointerLeave() {
+      // the mouse left the stage: Azul drifts back to its own path
+      ref.current.hover = false;
     },
     onKeyDown(e: KeyboardEvent<HTMLElement>) {
       const key = KEY_MAP[e.key];
@@ -227,6 +249,7 @@ export function useSteering(s: GameState, enabled = true, aimFrom: { x: number; 
     onBlur() {
       ref.current.keys.clear();
       ref.current.pointer = false;
+      ref.current.hover = false;
     },
   };
 

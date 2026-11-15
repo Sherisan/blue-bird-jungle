@@ -48,7 +48,7 @@ export function SettingsModal({ settings, soundOn, onChange, onToggleSound, onCl
 
         <section className="settings-group" aria-label="Sound">
           <h3 className="label">Sound</h3>
-          <Row id="set-sound" title="Sound effects" text="Squawk on take-off, the net shot and the cash-out chime." checked={soundOn} onChange={onToggleSound} />
+          <Row id="set-sound" title="Sound effects" text="Squawk on take-off, the net shot, the cage lock-up, cash-out fanfares and countdown ticks." checked={soundOn} onChange={onToggleSound} />
           <div className="setting setting--slider">
             <label htmlFor="set-volume" className="setting__text">
               <strong>Volume</strong>
@@ -66,6 +66,13 @@ export function SettingsModal({ settings, soundOn, onChange, onToggleSound, onCl
               disabled={!soundOn}
             />
           </div>
+          <Row
+            id="set-music"
+            title="Music"
+            text="A jungle soundtrack: a relaxed marimba groove while you bet, drums that speed up as Azul climbs."
+            checked={settings.music}
+            onChange={() => onChange({ music: !settings.music })}
+          />
           <Row
             id="set-ambient"
             title="Jungle ambience"
@@ -87,7 +94,7 @@ export function SettingsModal({ settings, soundOn, onChange, onToggleSound, onCl
           <Row
             id="set-steering"
             title="Steer Azul"
-            text="Drag or use the arrow keys during a flight. For fun only; it never changes the result."
+            text="Move the mouse over the sky (drag on touch screens) or use the arrow keys during a flight. For fun only; it never changes the result."
             checked={settings.steering}
             onChange={() => onChange({ steering: !settings.steering })}
           />

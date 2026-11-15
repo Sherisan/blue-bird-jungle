@@ -2,6 +2,8 @@
 export interface Settings {
   /** Master volume, 0..1. Sound itself is switched by the engine's soundOn flag. */
   volume: number;
+  /** The jungle soundtrack. */
+  music: boolean;
   /** Waterfall, crickets and distant bird calls under the game sounds. */
   ambient: boolean;
   /** Turns off screen shake, flashes and decorative animation. */
@@ -14,6 +16,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   volume: 0.8,
+  music: true,
   ambient: true,
   reducedMotion: false,
   hotkeys: true,

@@ -12,6 +12,8 @@ export interface EngineEvents {
   launch?: () => void;
   crash?: (m: number) => void;
   cashout?: (m: number) => void;
+  /** A bet was placed (by hand, from the queue or by auto play). */
+  bet?: () => void;
 }
 
 const MAX_ROWS = 12;
@@ -276,6 +278,7 @@ export class GameEngine {
       w.lim.lastNonce = nonce;
     }
     void this.sendBet(i, r.id, a, target);
+    this.events.bet?.();
     return true;
   }
 

@@ -221,7 +221,6 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   }
 
   // the path Azul actually flew (steered or not)
-  const trail = ph === 'flying' || (ph === 'crashed' && e < NET_T) ? steer.path.map((q) => `${q.x.toFixed(0)},${q.y.toFixed(0)}`).join(' ') : '';
 
   // sparkle trail behind Azul while flying
   const sparks =
@@ -310,7 +309,7 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
   return (
     <section
       className={`stage${ph === 'flying' ? ' stage--steerable' : ''}${steer.dragging ? ' is-dragging' : ''}`}
-      aria-label="Game stage. During a flight, drag Azul or use the arrow keys to steer."
+      aria-label="Game stage. During a flight, move the mouse over the sky (or drag on a touch screen) or use the arrow keys to steer Azul."
       tabIndex={0}
       {...steer.handlers}
     >
@@ -339,9 +338,6 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
                 <Bird state={birdState} />
               </g>
             </g>
-          )}
-          {trail && (
-            <polyline points={trail} fill="none" stroke="#8fe6ff" strokeWidth="2" strokeDasharray="2 8" strokeLinecap="round" opacity=".6" />
           )}
           {ph === 'flying' && m > 3 && (
             <g stroke="#dff7ff" strokeLinecap="round" opacity={Math.min(0.6, (m - 3) / 10)}>
@@ -563,7 +559,7 @@ export function Stage({ s, onDismissToast, onOpenFairness, reducedMotion = false
             <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
           </svg>
           <span>
-            Drag or use the arrow keys to steer Azul. <em>For fun: the catch point is fixed at take-off.</em>
+            Move your mouse over the sky to steer Azul. <em>For fun: the catch point is fixed at take-off.</em>
           </span>
         </div>
       )}

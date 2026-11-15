@@ -47,12 +47,16 @@ export default function App() {
     [engine, sfx],
   );
 
-  // sound: volume and the ambient jungle loop follow the settings
+  // sound: volume, the soundtrack and the ambient jungle loop follow the settings
   useEffect(() => sfx.setVolume(settings.volume), [sfx, settings.volume]);
   useEffect(() => {
     if (started && s.soundOn && settings.ambient) sfx.startAmbient();
     else sfx.stopAmbient();
   }, [sfx, started, s.soundOn, settings.ambient]);
+  useEffect(() => {
+    if (started && s.soundOn && settings.music) sfx.startMusic();
+    else sfx.stopMusic();
+  }, [sfx, started, s.soundOn, settings.music]);
 
   // reduced motion switches off decorative animation site-wide
   useEffect(() => {

@@ -2179,3 +2179,529 @@ kbd {
     padding: 0 6px 0 7px;
   }
 }
+
+/* ---- fit the window ------------------------------------------------------------------ */
+/*
+ * The whole game fits the window (or the lobby's frame) on any screen: the page never scrolls.
+ * The header, bet panels and footer take the room they need and the stage gets the rest; the
+ * stage redraws its scene for whatever shape it ends up (see Stage).
+ */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shell {
+  height: 100%;
+  gap: 8px;
+}
+
+.shell > .topbar,
+.shell > .footer {
+  flex: none;
+}
+
+.layout {
+  flex: 1 1 0;
+  min-height: 0;
+  flex-wrap: nowrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.layout__main {
+  flex: 1 1 0;
+  min-height: 0;
+  gap: 8px;
+}
+
+.layout__main > .stage {
+  flex: 1 1 0;
+  min-height: 140px;
+  max-height: none;
+  aspect-ratio: auto;
+}
+
+.layout__main > .toast {
+  flex: none;
+}
+
+.layout__side {
+  flex: none;
+}
+
+/* below the stage the two bets sit side by side when there's room; the history needs the side column */
+.layout .bet-panel {
+  flex-basis: 340px;
+}
+
+.layout__side > .panel {
+  display: none;
+}
+
+.footer {
+  padding: 4px 4px 0;
+  font-size: 12px;
+}
+
+/* wide windows (laptops, desktops, tablets and phones held sideways): bets and history beside the stage */
+@media (min-width: 700px) and (min-aspect-ratio: 13/10) {
+  .layout {
+    flex-direction: row;
+  }
+  .layout__side {
+    flex: none;
+    width: clamp(320px, 30vw, 420px);
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .layout .bet-panel {
+    flex-basis: 100%;
+  }
+  .layout__side > .panel {
+    display: flex;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .layout__side .rail__body {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 560px) {
+  .footer {
+    padding: 2px 8px calc(2px + env(safe-area-inset-bottom));
+    font-size: 11px;
+  }
+  .layout__main > .stage {
+    min-height: 160px;
+  }
+}
+
+/* short windows (phones held sideways, small frames): one slim header row so the stage keeps its height */
+@media (max-height: 540px) and (min-width: 561px) {
+  .shell {
+    --shell-pad: 8px;
+    gap: 6px;
+  }
+  .topbar {
+    flex-wrap: nowrap;
+    padding: 4px 8px;
+  }
+  .topbar__left {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  .topbar__tags,
+  .topbar .kicker,
+  .topbar__left > svg {
+    display: none;
+  }
+  .topbar__title h1 {
+    font-size: 20px;
+    white-space: nowrap;
+  }
+  .topbar__right {
+    flex-wrap: nowrap;
+  }
+  .topbar .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .footer {
+    padding-top: 0;
+    font-size: 11px;
+  }
+}
+
+/*
+ * laptops and desktops: a narrower side column with compact bet panels (the phone layout: stake and
+ * chips on the left, one tall bet button beside them), about half their old height, so the bet
+ * history fits underneath
+ */
+@media (min-width: 700px) and (min-aspect-ratio: 13/10) {
+  .layout__side {
+    width: clamp(290px, 25vw, 360px);
+    gap: 6px;
+  }
+  .layout__side .bet-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(100px, 34%);
+    grid-template-areas:
+      'title toggles toggles'
+      'amount amount btn'
+      'chips chips btn';
+    gap: 4px 6px;
+    padding: 6px 7px 6px 13px;
+  }
+  .layout__side .bet-panel__head,
+  .layout__side .bet-panel__body,
+  .layout__side .bet-panel__controls {
+    display: contents;
+  }
+  .layout__side .bet-panel__title {
+    grid-area: title;
+    min-width: 0;
+  }
+  .layout__side .toggle svg {
+    display: none;
+  }
+  .layout__side .bet-panel__name {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .layout__side .bet-panel__label {
+    flex: none;
+    font-size: 12px;
+  }
+  .layout__side .bet-panel__state {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 11px;
+  }
+  .layout__side .bet-panel__toggles {
+    grid-area: toggles;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+  .layout__side .toggle {
+    height: 24px;
+    padding: 0 6px 0 7px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .layout__side .amount {
+    grid-area: amount;
+    height: 36px;
+  }
+  .layout__side .amount > svg {
+    display: none;
+  }
+  .layout__side .amount__input {
+    height: 20px;
+    font-size: 15px;
+  }
+  .layout__side .step {
+    width: 30px;
+    font-size: 12px;
+  }
+  .layout__side .chips {
+    grid-area: chips;
+    gap: 2px;
+    padding: 3px 2px;
+  }
+  .layout__side .chip,
+  .layout__side .chip svg {
+    width: 25px;
+    height: 25px;
+  }
+  .layout__side .chip-max {
+    padding: 0 6px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .layout__side .bet-panel__body .big-btn {
+    grid-area: btn;
+    min-height: 0;
+    gap: 4px;
+    padding: 5px 5px 8px;
+  }
+  .layout__side .bet-panel__body .big-btn__label {
+    font-size: 14px;
+    text-align: center;
+  }
+  .layout__side .bet-panel__body .big-btn__sub {
+    padding: 2px 5px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+  .layout__side .bet-panel .cashout-row,
+  .layout__side .bet-panel .auto-row {
+    grid-column: 1 / -1;
+  }
+  .layout__side > .panel {
+    min-height: 120px;
+  }
+}
+
+/*
+ * mini player (the lobby's small floating frame, about 420x260): a slim top row, the whole scene on
+ * the left and one compact bet on the right; the second bet, chips, auto play and footer step aside
+ */
+@media (max-width: 699px) and (max-height: 420px) {
+  .shell {
+    --shell-pad: 6px;
+    gap: 5px;
+  }
+  .topbar {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 3px 6px;
+    border-radius: 12px;
+  }
+  .topbar__left {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 6px;
+  }
+  .topbar__left > svg,
+  .topbar .kicker,
+  .topbar__tags,
+  .topbar .nav-btn,
+  .topbar .balance .btn-ghost,
+  .topbar .balance__unit {
+    display: none;
+  }
+  .topbar__title {
+    min-width: 0;
+  }
+  .topbar__title h1 {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar__right {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  .topbar .icon-btn {
+    width: 30px;
+    height: 30px;
+  }
+  .topbar .icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .topbar .balance {
+    height: 30px;
+    padding: 0 9px 0 4px;
+    gap: 5px;
+  }
+  .topbar .balance > svg {
+    width: 20px;
+    height: 20px;
+  }
+  .topbar .balance__value {
+    font-size: 14px;
+  }
+
+  .layout {
+    flex-direction: row;
+    gap: 6px;
+  }
+  .layout__main > .stage {
+    min-height: 0;
+    margin-inline: 0;
+    width: 100%;
+    border-radius: 12px;
+    border-inline: 1px solid var(--line);
+  }
+  .layout__main > .toast {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .layout__side {
+    width: 132px;
+    min-height: 0;
+  }
+  .layout__side > .panel,
+  .slots > .bet-panel:nth-child(n + 2),
+  .footer {
+    display: none;
+  }
+  .slots,
+  .slots > .bet-panel {
+    height: 100%;
+  }
+  .layout .bet-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 6px 6px 11px;
+  }
+  .bet-panel__head,
+  .bet-panel__body,
+  .bet-panel__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .bet-panel__body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .bet-panel__toggles,
+  .chips,
+  .bet-panel .auto-row,
+  .bet-panel .cashout-row {
+    display: none;
+  }
+  .bet-panel__name {
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+  .bet-panel__label {
+    font-size: 11px;
+  }
+  .bet-panel__state {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .amount {
+    height: auto;
+    padding: 4px 4px 4px 7px;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .amount > svg {
+    display: none;
+  }
+  .amount__input {
+    height: 18px;
+    font-size: 15px;
+  }
+  .amount__steps {
+    width: 100%;
+  }
+  .step {
+    flex: 1 1 0;
+    width: auto;
+    height: 24px;
+    font-size: 12px;
+  }
+  .bet-panel__body .big-btn {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 3px;
+    padding: 4px 4px 6px;
+  }
+  .bet-panel__body .big-btn__mark {
+    display: none;
+  }
+  .bet-panel__body .big-btn__label {
+    font-size: 13px;
+    text-align: center;
+  }
+  .bet-panel__body .big-btn__sub {
+    padding: 1px 4px;
+    font-size: 9.5px;
+    line-height: 1.2;
+    text-align: center;
+  }
+}
+
+@media (max-width: 699px) and (max-height: 420px) {
+  .amount__field {
+    flex: 1 1 100%;
+  }
+  .amount__steps {
+    height: auto;
+  }
+}
+
+@media (max-width: 699px) and (max-height: 420px) {
+  .layout__side .slots {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+  .layout__side .slots > .bet-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .layout__side .bet-panel__body {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+  .layout__side .bet-panel__controls {
+    flex: none;
+  }
+  .layout__side .bet-panel__body .big-btn {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Blue Bird extras: the bets/stats tabs fill the side column, and the top bar stays on one row */
+.layout__side .rail__body {
+  max-height: none;
+  flex: 1 1 auto;
+}
+
+@media (min-width: 700px) and (min-aspect-ratio: 13/10) {
+  .layout__side > .panel {
+    flex-direction: column;
+  }
+  .layout__side .big-btn__key {
+    display: none;
+  }
+  .topbar {
+    flex-wrap: nowrap;
+  }
+  .topbar__left,
+  .topbar__right {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  .topbar__title h1 {
+    white-space: nowrap;
+  }
+}
+
+/* lobby frames and smaller laptops: drop the tags, then the session clock, before the top bar would wrap */
+@media (max-width: 1320px) {
+  .topbar__tags {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .topbar .session {
+    display: none;
+  }
+}
+
+@media (max-width: 699px) and (max-height: 420px) {
+  .topbar .session {
+    display: none;
+  }
+}
+
+/* short windows: the bets and stats tabs can shrink further so the side column doesn't need to scroll */
+@media (min-width: 700px) and (min-aspect-ratio: 13/10) and (max-height: 460px) {
+  .layout__side > .panel {
+    min-height: 0;
+  }
+}
+
+/* mini player: no room for the round results row or the stake bar on the scene */
+@media (max-width: 699px) and (max-height: 420px) {
+  .stage .stage__top,
+  .stage .hud-bl,
+  .stage .steer-hint {
+    display: none;
+  }
+}

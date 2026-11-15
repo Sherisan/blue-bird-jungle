@@ -68,7 +68,7 @@ export function HowToPlay({ onClose, initialTab = 'play' }: { onClose: () => voi
             </ol>
             <p className="muted small">
               <strong>Cash-out</strong> collects for you at a multiplier you set. <strong>Auto</strong> repeats a bet every round until a limit in
-              the ☰ menu is reached. During a flight you can drag Azul or use the arrow keys to steer, just for fun.
+              the ☰ menu is reached. During a flight you can steer Azul by moving your mouse over the sky (drag on a touch screen) or with the arrow keys, just for fun.
             </p>
           </div>
         )}

@@ -1240,12 +1240,15 @@ button.stage__round:hover {
     right: 10px;
     bottom: 10px;
   }
-  /* the sky band has room for the round results, below the read-out */
-  .stage__top {
-    top: 118px;
-  }
   .stage__history {
     flex: 1;
+  }
+}
+
+/* tall phones: the sky band has room for the round results, below the read-out */
+@media (max-width: 720px) and (min-height: 600px) {
+  .stage__top {
+    top: 118px;
   }
 }
 
@@ -1261,14 +1264,14 @@ button.stage__round:hover {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 600px) {
   .steer-hint {
     top: 156px;
   }
 }
 
-/* phones: the stake bar and steering hint sit in the band of sky, clear of Rato and the cage */
-@media (max-width: 720px) {
+/* tall phones: the stake bar and steering hint sit in the band of sky, clear of Rato and the cage */
+@media (max-width: 720px) and (min-height: 600px) {
   .hud-bl {
     top: 158px;
     bottom: auto;
